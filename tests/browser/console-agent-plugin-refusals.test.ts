@@ -477,7 +477,7 @@ test("the Plugins tab shows a plugin refusal as a focused error", async (t) => {
   const fixture = await pluginFixture(t);
   const namespace = entity(await fixture.createNamespace("Plugin refusal tab", { ready: true }));
   const values = record(nativeValues("refusal"));
-  delete record(record(values.plugins).entries).knowledge;
+  delete record(record(values.plugins).entries).teamnotes;
   values.tools = {
     ...(values.tools === undefined ? {} : record(values.tools)),
     byProvider: { openai: { deny: ["diffs"] } },

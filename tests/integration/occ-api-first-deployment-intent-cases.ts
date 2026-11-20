@@ -342,6 +342,6 @@ export async function verifyOrdinaryDeploy(
   assert.equal(deployed.configurationId, reviewed.id);
   assert.equal(deployed.configurationGeneration, updated.generation);
   assert.equal(deployed.revision, 1);
-  assert("temperature" in deployed.configuration);
-  assert.equal(deployed.configuration.temperature, "1");
+  assert("messages" in deployed.configuration);
+  assert.deepEqual(deployed.configuration.messages, { responsePrefix: "1" });
 }

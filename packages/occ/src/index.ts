@@ -340,6 +340,7 @@ import {
   ComputeRepositoryCredentialsUnsupportedError,
   ConfigurationGenerationConflictError,
   ConfigurationHarnessError,
+  ConfigurationValuesError,
   configurationSettingMessage,
   CredentialGatewayNotConfiguredError,
   CredentialProxyAdmissionError,
@@ -388,6 +389,7 @@ import {
   SecretStorageDriverError,
   SecretValueError,
   WorkClaimLostError,
+  type ConfigurationValuesCheck,
 } from "./errors.ts";
 import { admitGatewaySecurityDefaults } from "./gateway-security-defaults.ts";
 import {
@@ -519,6 +521,7 @@ export {
   ConfigurationGenerationConflictError,
   ConfigurationHarnessError,
   ConfigurationSizeError,
+  ConfigurationValuesError,
   configurationSettingMessage,
   CredentialGatewayNotConfiguredError,
   CredentialProxyAdmissionError,
@@ -590,6 +593,8 @@ export {
   TransientDependencyError,
   WorkClaimLostError,
   type CodexPermissionDenial,
+  type ConfigurationValueProblem,
+  type ConfigurationValuesCheck,
   type RuntimeLogsErrorCode,
 } from "./errors.ts";
 export {
@@ -2292,6 +2297,24 @@ type InstallationRepositoryAdmission = Readonly<{
   backendId: string;
 }>;
 
+/**
+ * The last Configuration admission rule on a write: the values check the caller's composition
+ * supplied, if any. `pointer` is the JSON Pointer of the values in the request body.
+ */
+function requireCheckedValues(
+  check: ConfigurationValuesCheck | undefined,
+  values: Readonly<OpenClawConfigurationDocument>,
+  pointer: string,
+): void {
+  const [first, ...rest] = (check?.(values) ?? []).map((problem) => ({
+    ...problem,
+    path: `${pointer}${problem.path}`,
+  }));
+  if (first !== undefined) {
+    throw new ConfigurationValuesError([first, ...rest]);
+  }
+}
+
 export class OpenClawController {
   private installationRepositoryAdmission?: InstallationRepositoryAdmission;
   private builtInRepositoryDriver?: RegisteredDriver;
@@ -3800,6 +3823,7 @@ export class OpenClawController {
         values: Readonly<OpenClawConfigurationDocument>,
       ) => Readonly<OpenClawConfigurationDocument>;
     },
+    checkValues?: ConfigurationValuesCheck,
   ): Promise<Readonly<ProvisionAgentResult>> {
     // Authorize the Namespace-level grants before reading the plan, as status and retry do: a
     // caller without them gets the same audited denial whatever the body says, and never a
@@ -3904,6 +3928,7 @@ export class OpenClawController {
           : { secretBindings: configurationInput.secretBindings }),
         createdAt: this.timestamp(),
       });
+      requireCheckedValues(checkValues, configurationInput.values, "/configuration/values");
     };
     const replay = await this.read((state) =>
       state.provisioning.findByRequest(input.namespaceId, principalId, requestId),
@@ -10009,6 +10034,7 @@ export class OpenClawController {
   async createConfiguration(
     principalId: string,
     input: CreateConfigurationInput,
+    checkValues?: ConfigurationValuesCheck,
   ): Promise<Readonly<Configuration>> {
     if (input.kind !== "agent") {
       throw new ScopeViolationError("The Configuration kind must identify an Agent.");
@@ -10050,6 +10076,7 @@ export class OpenClawController {
       await driver.validateSize?.(values);
       this.validateConfigurationContent(values, undefined, secretBindings);
       await driver.validate(configuration);
+      requireCheckedValues(checkValues, values, "/values");
       const metadata = await state.configurations.createConfiguration({
         id: configuration.id,
         namespaceId: namespace.id,
@@ -10386,6 +10413,7 @@ export class OpenClawController {
   async updateConfiguration(
     principalId: string,
     input: UpdateConfigurationInput,
+    checkValues?: ConfigurationValuesCheck,
   ): Promise<Readonly<Configuration>> {
     this.configurationIdentity(input.namespaceId, input.configurationId);
     if (Object.hasOwn(input, "kind")) {
@@ -10463,6 +10491,7 @@ export class OpenClawController {
       // it replaced (finding 2319).
       this.validateConfigurationContent(values, undefined, secretBindings);
       await driver.validate(configuration);
+      requireCheckedValues(checkValues, values, "/values");
       // Registered before the write: a replace that applied but answered with an error (a
       // timeout, a lost response) would otherwise leave the stored Configuration one generation
       // ahead of the rolled-back metadata (finding 911). A write that never applied is left alone,
@@ -12862,6 +12891,7 @@ export class OpenClawController {
     principalId: string,
     input: ValidateAgentCreateInput,
     resolveHarness?: HarnessResolver,
+    checkValues?: ConfigurationValuesCheck,
   ): Promise<void> {
     if (input.name !== undefined && !isName(input.name)) {
       throw new ScopeViolationError("The Agent name is invalid.");
@@ -12924,6 +12954,7 @@ export class OpenClawController {
       await configurationDriver.validateSize?.(values);
       this.validateConfigurationContent(values, undefined, secretBindings);
       await configurationDriver.validate(configuration);
+      requireCheckedValues(checkValues, values, "/configuration/values");
       const driver = await this.validateAgentPlugins(plugins, pluginApprovers, () => values);
       rejectCrossNamespaceSecretSources(
         namespace.id,

@@ -613,3 +613,63 @@ test("ordinary creators enable browser access atomically on an unshared Configur
     1,
   );
 });
+
+test("Configuration saves and the Agent create check refuse values the pinned runtime schema rejects", async (t) => {
+  const f = await setup(t);
+  const configurations = `/namespaces/${f.namespace.id}/configurations`;
+  // Two problems in one document: a misspelled setting and a number where text is required.
+  const refusedValues = { tools: { web: { serch: { enabled: true } } }, gateway: { bind: 7 } };
+  const messages = [
+    "Configuration setting tools.web.serch is not a setting of the pinned OpenClaw runtime.",
+    "Configuration setting gateway.bind must be a string, not a number.",
+  ];
+  const refusal = (pointer: string) => ({
+    code: "INVALID_REQUEST",
+    message: messages[0],
+    details: [
+      { path: `${pointer}/tools/web/serch`, code: "UNKNOWN_FIELD", message: messages[0] },
+      { path: `${pointer}/gateway/bind`, code: "INVALID_TYPE", message: messages[1] },
+    ],
+  });
+
+  const saved = await f.createConfiguration(f.namespace.id, { tools: { web: {} } });
+  const configurationsBefore = await f.configurationIds();
+  const mutationsBefore = f.mutationCount();
+  const created = await f.request("POST", configurations, {
+    body: { kind: "agent", values: refusedValues } satisfies CreateConfigurationBody,
+  });
+  assert.deepEqual(
+    f.fixtureResponse(created, 400, ErrorResponse, "refuse create").error,
+    refusal("/values"),
+  );
+  const updated = await f.request("PATCH", `${configurations}/${saved.id}`, {
+    body: { values: refusedValues },
+  });
+  assert.deepEqual(
+    f.fixtureResponse(updated, 400, ErrorResponse, "refuse update").error,
+    refusal("/values"),
+  );
+  const preflight = await f.validate({ configuration: { kind: "agent", values: refusedValues } });
+  assert.deepEqual(
+    f.fixtureResponse(preflight, 400, ErrorResponse, "refuse preflight").error,
+    refusal("/configuration/values"),
+  );
+  // Nothing was created, and the saved Configuration keeps its values and generation.
+  assert.deepEqual(await f.configurationIds(), configurationsBefore);
+  assert.equal(f.mutationCount(), mutationsBefore);
+  const stored = f.fixtureResponse(
+    await f.request("GET", `${configurations}/${saved.id}`),
+    200,
+    ConfigurationResponse,
+    "read the saved Configuration",
+  ).data;
+  assert.deepEqual(stored.values, { tools: { web: {} } });
+  assert.equal(stored.generation, saved.generation);
+
+  // The runtime replaces ${NAME} before it validates, so a reference in a setting with fixed
+  // choices is saved, and the same document without the misspelling is accepted everywhere.
+  const accepted = { tools: { web: { search: { enabled: true } } }, gateway: { bind: "${BIND}" } };
+  await f.createConfiguration(f.namespace.id, accepted);
+  await f.updateConfiguration(f.namespace.id, saved.id, accepted);
+  await f.accept({ configuration: { kind: "agent", values: accepted } }, await f.signIn());
+});

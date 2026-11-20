@@ -935,7 +935,7 @@ export const AgentConfigurationSchemaResponse = Type.Object(
         ),
         schema: Type.Record(Type.String(), Type.Unknown(), {
           description:
-            "The JSON Schema (draft-07) that `openclaw config schema` prints at that commit. It describes the native configuration document an Agent Configuration holds in `values`.",
+            "The JSON Schema (draft-07) that `openclaw config schema` prints at that commit. It describes the native configuration document an Agent Configuration holds in `values`. Configuration create and update, Agent provisioning and the Agent create check refuse `values` with an unknown setting, a wrong type, a value outside the fixed choices or a number out of range under it. The runtime checks required settings, text patterns and formats when it starts.",
         }),
         uiHints: Type.Record(Type.String(), AgentConfigurationUiHint, {
           description:

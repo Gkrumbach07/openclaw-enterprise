@@ -860,7 +860,7 @@ export const occApiRoutes = [
     resourceKind: "namespace",
     authorizationTarget: "namespace",
     summary:
-      "Get the configuration JSON Schema and display hints of the pinned OpenClaw runtime, which describe Agent Configuration values",
+      "Get the configuration JSON Schema and display hints of the pinned OpenClaw runtime, which Agent Configuration values are checked against",
     tags: ["Agents"],
     schema: {
       querystring: EmptyQuery,

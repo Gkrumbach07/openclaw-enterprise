@@ -290,7 +290,7 @@ test("service API keys authenticate scoped automation without replacing sessions
         assertStringFields(key, "key", "id");
         const created = await request("POST", `/namespaces/${namespaceId}/configurations`, {
           headers: { "x-api-key": key.key },
-          body: { kind: "agent", values: { model: "gpt-test" } },
+          body: { kind: "agent", values: { messages: { responsePrefix: "gpt-test" } } },
         });
         assert.equal(created.status, 201);
         configurationIds.push(stringField(created.data, "id"));

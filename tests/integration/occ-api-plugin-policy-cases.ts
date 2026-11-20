@@ -333,7 +333,8 @@ export function registerOpenClawPluginPolicyCases(
     for (const deny of denials) {
       denying.push(await createConfiguration(controller, namespace.id, { tools: { deny } }));
     }
-    const allowed = { tools: { deny: ["exec", "diffs-*", 7] } };
+    // A saved list holds only text, as the pinned runtime's schema requires.
+    const allowed = { tools: { deny: ["exec", "diffs-*"] } };
     const configuration = await createConfiguration(controller, namespace.id, allowed);
     const pluginDriver = new OCCPluginDriver();
     selectPluginDriver(controller, pluginDriver);
@@ -431,7 +432,8 @@ export function registerOpenClawPluginPolicyCases(
     await store({ tools: { deny: ["*"] } });
     assertRefused(await deploy(), "deploy with a deny-all list");
     assert.equal((await readRevisions(controller, agentPath)).length, 0);
-    await store(allowed);
+    // A row stored before the schema check can hold another type, which the deny rule skips.
+    await store({ tools: { deny: [...allowed.tools.deny, 7] } });
     const deployed = await deploy();
     checkedInjectedBody(deployed, 202, AgentRevisionResponse);
   });

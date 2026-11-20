@@ -122,9 +122,13 @@ export async function runServiceApiKeysCliScenario(
     const secretUpdateFile = join(directory, "secret-update.json");
     const roleFile = join(directory, "role.json");
     await writeFile(keyFile, JSON.stringify(issued), { mode: 0o600 });
-    await writeFile(bodyFile, JSON.stringify({ kind: "agent", values: { model: "gpt-test" } }), {
-      mode: 0o600,
-    });
+    await writeFile(
+      bodyFile,
+      JSON.stringify({ kind: "agent", values: { messages: { responsePrefix: "gpt-test" } } }),
+      {
+        mode: 0o600,
+      },
+    );
     await writeFile(secretFile, JSON.stringify({ name: "cli-secret", value: "initial-secret" }), {
       mode: 0o600,
     });
@@ -141,7 +145,7 @@ export async function runServiceApiKeysCliScenario(
     );
     await writeFile(
       ambiguousBodyFile,
-      '{"kind":"agent","kind":"agent","values":{"model":"gpt-test"}}',
+      '{"kind":"agent","kind":"agent","values":{"messages":{"responsePrefix":"gpt-test"}}}',
       { mode: 0o600 },
     );
     const env = {
@@ -213,7 +217,7 @@ export async function runServiceApiKeysCliScenario(
     const configuration = jsonRecord(created.stdout);
     assertStringFields(configuration, "id");
     const configurationPath = `/namespaces/${namespaceId}/configurations/${configuration.id}`;
-    assert.equal(record(configuration.values).model, "gpt-test");
+    assert.deepEqual(record(configuration.values).messages, { responsePrefix: "gpt-test" });
 
     // A bodyless 204 becomes a stable domain result instead of leaking transport details.
     const deleted = await run(

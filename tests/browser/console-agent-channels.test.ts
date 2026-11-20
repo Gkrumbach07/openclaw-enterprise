@@ -421,7 +421,7 @@ describe("Agent channels", { concurrency: 3 }, () => {
     const configurationDataValuesPluginsEntries = configurationDataValuesPlugins.entries;
     assertRecord(configurationDataValuesPluginsEntries);
     const configurationDataValuesPluginsEntriesKnowledge =
-      configurationDataValuesPluginsEntries.knowledge;
+      configurationDataValuesPluginsEntries.teamnotes;
     assertRecord(configurationDataValuesPluginsEntriesKnowledge);
     const configurationDataValuesPluginsEntriesKnowledgeConfig =
       configurationDataValuesPluginsEntriesKnowledge.config;
@@ -691,7 +691,7 @@ describe("Agent channels", { concurrency: 3 }, () => {
     assert.deepEqual(storedEntries[" Slack"], { enabled: true, config: { marker: "variant" } });
     assert.deepEqual(stored.allow, ["codex", " Slack"]);
     // Other plugins' entries are untouched.
-    assert.deepEqual(storedEntries.knowledge, valuesPluginsEntries.knowledge);
+    assert.deepEqual(storedEntries.teamnotes, valuesPluginsEntries.teamnotes);
     assert.deepEqual(storedEntries.codex, valuesPluginsEntries.codex);
   });
 

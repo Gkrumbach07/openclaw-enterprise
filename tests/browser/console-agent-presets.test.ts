@@ -2036,7 +2036,7 @@ test("API-key Presets keep their credential provider fixed while allowing model 
 });
 
 test("Harness switches preserve unrestricted and explicit native plugin allowlists through Agent creation", async (t) => {
-  for (const allow of [undefined, [], ["knowledge"], ["knowledge", "codex"], ["codex"]]) {
+  for (const allow of [undefined, [], ["teamnotes"], ["teamnotes", "codex"], ["codex"]]) {
     const fixture = await createConsoleAppFixture(t);
     await fixture.bootstrap();
     const namespace = await fixture.createNamespace("Native plugin settings", { ready: true });
@@ -2071,7 +2071,7 @@ test("Harness switches preserve unrestricted and explicit native plugin allowlis
     const dedicated = JSON.parse(await configuration.inputValue());
     assert.deepEqual(dedicated.plugins.allow, allow);
     assert.deepEqual(dedicated.plugins.deny, values.plugins.deny);
-    assert.deepEqual(dedicated.plugins.entries.knowledge, values.plugins.entries.knowledge);
+    assert.deepEqual(dedicated.plugins.entries.teamnotes, values.plugins.entries.teamnotes);
     assert.equal(dedicated.plugins.entries.codex.enabled, true);
     await harness.selectOption("openclaw");
     assert.deepEqual(JSON.parse(await configuration.inputValue()).plugins, values.plugins);
@@ -2382,8 +2382,8 @@ test("Presets render variables into independent Agent drafts and keep partial-sa
     harnessId: "codex",
     providerModel: "gpt-5.1",
   });
-  values.plugins.entries.knowledge.config.enabled = "{{ vars.enabled }}";
-  values.plugins.entries.knowledge.config.count = "{{ vars.count }}";
+  values.plugins.entries.teamnotes.config.enabled = "{{ vars.enabled }}";
+  values.plugins.entries.teamnotes.config.count = "{{ vars.count }}";
   const plugins = {
     "codex-plugin:linear@openai-curated-remote": {
       enabled: true,
@@ -2475,7 +2475,7 @@ test("Presets render variables into independent Agent drafts and keep partial-sa
   const rendered = JSON.parse(
     await page.getByLabel("Configuration JSON", { exact: true }).inputValue(),
   );
-  assert.deepEqual(rendered.plugins.entries.knowledge.config, {
+  assert.deepEqual(rendered.plugins.entries.teamnotes.config, {
     marker: "changed",
     thresholds: [1, 2, 3],
     enabled: false,
@@ -2499,7 +2499,7 @@ test("Presets render variables into independent Agent drafts and keep partial-sa
   const edited = JSON.parse(
     await page.getByLabel("Configuration JSON", { exact: true }).inputValue(),
   );
-  edited.plugins.entries.knowledge.config.thresholds = [5, 6];
+  edited.plugins.entries.teamnotes.config.thresholds = [5, 6];
   await openAdvancedSettings(page);
   await page.getByLabel("Configuration JSON", { exact: true }).fill(JSON.stringify(edited));
   await page.getByLabel("AGENTS.md", { exact: true }).fill("# Edited workspace\n");
@@ -2597,8 +2597,8 @@ test("Presets render variables into independent Agent drafts and keep partial-sa
   );
   assert.deepEqual(saved.data.secretBindings, secretBindings);
   assert.deepEqual(saved.data.values.gateway.controlUi, { enabled: false });
-  assert.equal(saved.data.values.plugins.entries.knowledge.config.marker, "changed");
-  assert.deepEqual(saved.data.values.plugins.entries.knowledge.config.thresholds, [5, 6]);
+  assert.equal(saved.data.values.plugins.entries.teamnotes.config.marker, "changed");
+  assert.deepEqual(saved.data.values.plugins.entries.teamnotes.config.thresholds, [5, 6]);
   assert.equal(configurationPostRequests(requests, namespace.id).length, 1);
   assert.equal(pathRequests(requests, "GET", presetPath).length, presetReads);
 

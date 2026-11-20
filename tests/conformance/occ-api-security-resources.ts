@@ -136,7 +136,9 @@ export function registerResourceAuthorityCases() {
     await bootstrap(fixture);
     const namespace = await createNamespace(fixture, "Tenant A");
     const agent = await createAgent(fixture, namespace, "Private configuration agent");
-    const replacement = await createConfiguration(fixture, namespace, { model: "private-model" });
+    const replacement = await createConfiguration(fixture, namespace, {
+      messages: { responsePrefix: "private-model" },
+    });
 
     const updated = await request(fixture.app, `/namespaces/${namespace.id}/agents/${agent.id}`, {
       method: "PATCH",
@@ -181,7 +183,9 @@ export function registerResourceAuthorityCases() {
     const namespace = await createNamespace(fixture, "Tenant A");
     const deniedAgent = await createAgent(fixture, namespace, "Restricted agent");
     const allowedAgent = await createAgent(fixture, namespace, "Allowed agent");
-    const replacement = await createConfiguration(fixture, namespace, { model: "allowed" });
+    const replacement = await createConfiguration(fixture, namespace, {
+      messages: { responsePrefix: "allowed" },
+    });
     assert.equal(deniedAgent.id, deniedAgentId);
 
     const denied = await request(

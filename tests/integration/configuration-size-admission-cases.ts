@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { Check } from "typebox/value";
+import { checkRuntimeConfigurationValues } from "../../apps/controller/src/admission/runtime-configuration-schema.ts";
 import { KubernetesConfigurationDriver } from "../../apps/controller/src/drivers/configuration/kubernetes/index.ts";
 import type { ControllerApp } from "../../apps/controller/src/index.ts";
 import {
@@ -241,7 +242,7 @@ export function registerConfigurationSizeAdmissionCases({
     // The bound is relative to a structured clone of the same document, so a slow or busy runner
     // does not fail it. The two are timed in turn, each at its best of five. At two CPUs the
     // save's two rules take about 2.5 clones; they took about 13 before.
-    const timings = { checking: Infinity, cloning: Infinity };
+    const timings = { checking: Infinity, cloning: Infinity, schema: Infinity };
     for (let round = 0; round < 5; round += 1) {
       const checkingStarted = performance.now();
       const results = checks.map((check) => check());
@@ -251,8 +252,17 @@ export function registerConfigurationSizeAdmissionCases({
       const cloningStarted = performance.now();
       structuredClone(values);
       timings.cloning = Math.min(timings.cloning, performance.now() - cloningStarted);
+      // The save's last rule, the check against the pinned runtime's schema, runs inside OCC.
+      const schemaStarted = performance.now();
+      assert.deepEqual(checkRuntimeConfigurationValues(values), []);
+      timings.schema = Math.min(timings.schema, performance.now() - schemaStarted);
     }
-    const { checking, cloning } = timings;
+    const { checking, cloning, schema } = timings;
+    // The schema check walks each entry once; it takes about one clone.
+    assert.ok(
+      schema < 4 * cloning,
+      `the schema check took ${schema.toFixed(0)} ms, a clone ${cloning.toFixed(0)} ms`,
+    );
     assert.ok(
       checking < 6 * cloning,
       `the rules took ${checking.toFixed(0)} ms, a clone ${cloning.toFixed(0)} ms`,

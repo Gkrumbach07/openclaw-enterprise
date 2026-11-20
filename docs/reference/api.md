@@ -4428,7 +4428,7 @@ Example response
 | [`POST /agents/{agentId}/chat`](#post-agentsagentidchat) | Submit an Agent turn and receive native JSON or SSE |
 | [`GET /namespaces/{namespaceId}/agents`](#get-namespacesnamespaceidagents) | List authorized Agents in one exact Namespace |
 | [`POST /namespaces/{namespaceId}/agents`](#post-namespacesnamespaceidagents) | Create a Namespace-owned Agent |
-| [`GET /namespaces/{namespaceId}/agents/configuration-schema`](#get-namespacesnamespaceidagentsconfigurationschema) | Get the configuration JSON Schema and display hints of the pinned OpenClaw runtime, which describe Agent Configuration values |
+| [`GET /namespaces/{namespaceId}/agents/configuration-schema`](#get-namespacesnamespaceidagentsconfigurationschema) | Get the configuration JSON Schema and display hints of the pinned OpenClaw runtime, which Agent Configuration values are checked against |
 | [`POST /namespaces/{namespaceId}/agents/device-authorizations`](#post-namespacesnamespaceidagentsdeviceauthorizations) | Experimental: Start a private device login for Agent configuration |
 | [`DELETE /namespaces/{namespaceId}/agents/device-authorizations/{sessionId}`](#delete-namespacesnamespaceidagentsdeviceauthorizationssessionid) | Experimental: Discard a local device login without upstream revocation |
 | [`POST /namespaces/{namespaceId}/agents/device-authorizations/{sessionId}/poll`](#post-namespacesnamespaceidagentsdeviceauthorizationssessionidpoll) | Experimental: Complete device login without returning credential material |
@@ -4826,7 +4826,7 @@ Example response
 
 <span id="get-namespacesnamespaceidagentsconfigurationschema"></span>
 
-Get the configuration JSON Schema and display hints of the pinned OpenClaw runtime, which describe Agent Configuration values
+Get the configuration JSON Schema and display hints of the pinned OpenClaw runtime, which Agent Configuration values are checked against
 
 **Operation ID:** `getAgentConfigurationSchema`
 
@@ -4861,7 +4861,7 @@ Get the configuration JSON Schema and display hints of the pinned OpenClaw runti
 | `data` | `object` | Yes | — |
 | `data.runtime` | `object` | Yes | — |
 | `data.runtime.commit` | `string` | Yes | min length: 1; The OpenClaw source commit the schema and hints describe. |
-| `data.schema` | `object<string, any>` | Yes | The JSON Schema (draft-07) that `openclaw config schema` prints at that commit. It describes the native configuration document an Agent Configuration holds in `values`. |
+| `data.schema` | `object<string, any>` | Yes | The JSON Schema (draft-07) that `openclaw config schema` prints at that commit. It describes the native configuration document an Agent Configuration holds in `values`. Configuration create and update, Agent provisioning and the Agent create check refuse `values` with an unknown setting, a wrong type, a value outside the fixed choices or a number out of range under it. The runtime checks required settings, text patterns and formats when it starts. |
 | `data.uiHints` | `object<string, object>` | Yes | The display hints of the OpenClaw Control UI at that commit, keyed by dotted setting path. `*` stands for any map key and `[]` for any list entry, as in `agents.entries.*.model`. |
 | `meta` | `object` | Yes | — |
 | `meta.requestId` | `string` | Yes | pattern: `^req_[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$` |

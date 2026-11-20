@@ -1230,17 +1230,18 @@ export function registerDeletionAndNavigationCases(detailApp: ReturnType<typeof 
 }
 
 export function registerSettingsRefocusAndTabsCases(detailApp: ReturnType<typeof fileConsoleApp>) {
-  for (const [dmPolicy, groupPolicy, enterpriseOrgInstall] of [
+  // The pinned runtime retired channels.slack.enterpriseOrgInstall, and the API's schema check
+  // refuses a Configuration that holds it, so no case saves an organization-wide install.
+  for (const [dmPolicy, groupPolicy] of [
     ["pairing", "allowlist"],
     ["open", "open"],
     ["disabled", "disabled"],
     [undefined, undefined],
-    ["disabled", "allowlist", true],
   ] as const) {
-    test(`Slack channel editing preserves ${dmPolicy ?? "omitted"} DM and ${groupPolicy ?? "omitted"} group policies${enterpriseOrgInstall ? " on an organization-wide install" : ""}`, async (t) => {
+    test(`Slack channel editing preserves ${dmPolicy ?? "omitted"} DM and ${groupPolicy ?? "omitted"} group policies`, async (t) => {
       const fixture = await detailApp(t);
       const namespace = await fixture.createNamespace(
-        `Slack policy editing ${dmPolicy ?? "omitted"} ${groupPolicy ?? "omitted"}${enterpriseOrgInstall ? " organization" : ""}`,
+        `Slack policy editing ${dmPolicy ?? "omitted"} ${groupPolicy ?? "omitted"}`,
         { ready: true },
       );
 
@@ -1253,7 +1254,6 @@ export function registerSettingsRefocusAndTabsCases(detailApp: ReturnType<typeof
         mode: "socket",
         appToken: { source: "env", provider: "default", id: "SLACK_APP_TOKEN" },
         botToken: { source: "env", provider: "default", id: "SLACK_BOT_TOKEN" },
-        ...(enterpriseOrgInstall ? { enterpriseOrgInstall } : {}),
         ...(dmPolicy === undefined ? {} : { dmPolicy }),
         ...(groupPolicy === undefined ? {} : { groupPolicy }),
         allowFrom: dmPolicy === "open" ? ["*"] : ["UKEEP123"],
@@ -1283,24 +1283,6 @@ export function registerSettingsRefocusAndTabsCases(detailApp: ReturnType<typeof
       await waitForEnabled(edit);
       await edit.click();
       const dialog = page.getByRole("dialog", { name: "Edit Slack" });
-      if (enterpriseOrgInstall) {
-        // Per-user DM authorization cannot be shared across organization workspaces.
-        for (const unsupported of ["pairing", "allowlist"]) {
-          await dialog.getByLabel("Direct-message policy").selectOption(unsupported);
-          await dialog.getByRole("button", { name: "Save configuration", exact: true }).click();
-          await dialog
-            .getByText(
-              "Choose Disabled or Open for direct messages on an organization-wide Slack install.",
-            )
-            .waitFor();
-        }
-        const unchanged = await fixture.request(
-          "GET",
-          `/namespaces/${namespace.id}/configurations/${agent.configurationId}`,
-        );
-        assert.deepEqual(slackSettings(unchanged), slack);
-        await dialog.getByLabel("Direct-message policy").selectOption("disabled");
-      }
       const allowedUsers = dialog.getByRole("combobox", {
         name: "Allowed people in these channels",
         exact: true,
@@ -1333,8 +1315,8 @@ export function registerSettingsRefocusAndTabsCases(detailApp: ReturnType<typeof
         },
       });
       const plugins = record(record(responseData(configuration).values).plugins);
-      const knowledge = record(record(plugins.entries).knowledge);
-      assert.equal(record(knowledge.config).marker, "policy-preservation");
+      const notes = record(record(plugins.entries).teamnotes);
+      assert.equal(record(notes.config).marker, "policy-preservation");
     });
   }
 

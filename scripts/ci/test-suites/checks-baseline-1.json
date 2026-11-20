@@ -120,6 +120,7 @@
     "tests/integration/production-healthcheck.test.ts",
     "tests/conformance/pr-status.test.ts",
     "tests/conformance/codex-stderr-filter.test.ts",
+    "tests/conformance/runtime-configuration-schema.test.ts",
     "tests/docs/docs-server.test.ts",
     "tests/integration/console-build-metadata.test.ts",
     "tests/conformance/console-design-tokens.test.ts",
@@ -351,6 +352,9 @@
     },
     {
       "path": "tests/conformance/codex-stderr-filter.test.ts"
+    },
+    {
+      "path": "tests/conformance/runtime-configuration-schema.test.ts"
     },
     {
       "path": "tests/conformance/occ-read.test.ts"

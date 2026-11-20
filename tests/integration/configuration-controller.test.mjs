@@ -346,12 +346,13 @@ function createOpenClawConfiguration() {
     secrets: {
       providers: { teamstore: { source: "store" } },
       defaults: { store: "teamstore" },
-      credential_proxy: { enabled: true },
     },
     agents: { defaults: { sandbox: { mode: "off", scope: "agent" } } },
     plugins: {
       entries: {
-        knowledge: {
+        // Not a plugin the pinned runtime bundles, so its schema leaves `config` open: the
+        // values below exercise every JSON type a native document can hold.
+        teamnotes: {
           enabled: true,
           config: {
             thresholds: [0, 1.25, null],
@@ -889,7 +890,6 @@ test("Configuration save refuses an agents roster every deployment refuses, with
 
   // Rules that depend on the topology stay at deployment: only dedicated execution serves main,
   // so these save (embedded OpenClaw deploys them; see kubernetes-compute.test.mjs).
-  // An empty agents.list beside an empty roster is valid everywhere.
   for (const values of [
     withAgents({ entries: { helper: {} } }),
     withAgents({ ownership: "explicit", entries: { main: {}, _main: {} } }),
@@ -898,11 +898,19 @@ test("Configuration save refuses an agents roster every deployment refuses, with
       entries: { main: {}, helper: {} },
       defaults: { ...runtimeDefaults, sessionStore: { agentId: "helper" } },
     }),
-    withAgents({ list: [] }),
   ]) {
     const saved = await createAgentConfiguration(context, values);
     assert.deepEqual(saved.body.data.values, values);
   }
+  // The roster rules and the pinned Gateway tolerate an empty agents.list beside an empty roster,
+  // but the pinned runtime's schema has no agents.list. The schema check runs last and refuses
+  // the key by name, so a saved document holds only settings the schema describes.
+  assertRefused(
+    await request(context.app, "POST", context.collection, {
+      body: { kind: "agent", values: withAgents({ list: [] }) },
+    }),
+    "Configuration setting agents.list is not a setting of the pinned OpenClaw runtime.",
+  );
 });
 
 test("Configuration save refuses a provider catalog row that no model selection names, with deployment's text", async () => {
@@ -1914,8 +1922,6 @@ test("Configuration save and Kubernetes deployment admission refuse settings pre
       409,
       KUBERNETES_GATEWAY_PASSWORD_REFUSAL,
     ],
-    // An explicit null is unset to the save rule, as for model credentials; Kubernetes refuses it.
-    [password(null), 409, KUBERNETES_GATEWAY_PASSWORD_REFUSAL],
     [
       { ...valid, channels: { slack: { enabled: true } } },
       400,
@@ -2002,6 +2008,18 @@ test("Configuration save and Kubernetes deployment admission refuse settings pre
     assert.equal(deployed.status, deployStatus, label);
     assert.equal(deployed.body.error.message, deployMessage, label);
   }
+  // An explicit null is unset to the save rule, as for model credentials. The pinned runtime's
+  // schema takes only text or a SecretRef there, so the schema check refuses the save, and
+  // Kubernetes refuses a row stored before that check at deployment.
+  assertRefused(
+    await request(context.app, "PATCH", item, { body: { values: password(null) } }),
+    "Configuration setting gateway.auth.password must be a string or an object, not null.",
+  );
+  await writePastOcc(configurationDriver, agent.configurationId, password(null));
+  const storedNull = await request(context.app, "POST", `${agentPath}/deploy`);
+  assert.equal(storedNull.status, 409, JSON.stringify(storedNull.body));
+  assert.equal(storedNull.body.error.message, KUBERNETES_GATEWAY_PASSWORD_REFUSAL);
+  await writePastOcc(configurationDriver, agent.configurationId, valid);
   // No refused deployment admitted a revision, so none stopped a running one.
   const revisions = await request(context.app, "GET", `${agentPath}/revisions`);
   assert.equal(revisions.status, 200);
@@ -2874,7 +2892,7 @@ test("Configuration and Preset saves refuse an OpenRouter compatibility selector
         defaults: {
           ...codex,
           subagents: { model: "openrouter:auto-1" },
-          heartbeat: { model: "my-openrouter:free" },
+          compaction: { model: "my-openrouter:free" },
         },
       },
     },
@@ -2919,7 +2937,7 @@ test("Configuration operations fail closed when no ConfigurationDriver is select
     context.app,
     "POST",
     `/namespaces/${namespace.id}/configurations`,
-    { body: { kind: "agent", values: { model: "gpt-test" } } },
+    { body: { kind: "agent", values: { messages: { responsePrefix: "gpt-test" } } } },
   );
   assert.equal(unavailable.status, 503);
   assert.equal(unavailable.body.error.code, "DEPENDENCY_UNAVAILABLE");
@@ -2945,7 +2963,7 @@ test("Configuration creation rolls back its external substrate when its required
     context.app,
     "POST",
     `/namespaces/${namespace.id}/configurations`,
-    { body: { kind: "agent", values: { model: "gpt-never-admitted" } } },
+    { body: { kind: "agent", values: { messages: { responsePrefix: "gpt-never-admitted" } } } },
   );
   assert.equal(rejected.status, 503, JSON.stringify(rejected.body));
   assert.equal(rejected.body.error.code, "DEPENDENCY_UNAVAILABLE");
@@ -2976,7 +2994,10 @@ for (const [method, action] of [
       auditSink: new FailingConfigurationAuditSink(),
     });
     const created = await request(context.app, "POST", collection, {
-      body: { kind: "agent", values: { model: "gpt-original", region: "west" } },
+      body: {
+        kind: "agent",
+        values: { messages: { responsePrefix: "gpt-original", ackReaction: "west" } },
+      },
     });
     assert.equal(created.status, 201, JSON.stringify(created.body));
     const configuration = created.body.data;
@@ -2986,7 +3007,9 @@ for (const [method, action] of [
       context.app,
       method,
       `${collection}/${configuration.id}`,
-      method === "PATCH" ? { body: { values: { model: "gpt-must-not-survive" } } } : {},
+      method === "PATCH"
+        ? { body: { values: { messages: { responsePrefix: "gpt-must-not-survive" } } } }
+        : {},
     );
     assert.equal(rejected.status, 503, JSON.stringify(rejected.body));
     assert.equal(rejected.body.error.code, "DEPENDENCY_UNAVAILABLE");
@@ -3136,7 +3159,7 @@ test("Without Kubernetes Compute, Configuration and Preset saves refuse what eve
         "X-Pinned-Version": "1",
         "x-api-key-version": "2",
       },
-      models: [{ id: "m", request: { headers: { "x.trace.id": "t" } } }],
+      models: [{ id: "m", headers: { "x.trace.id": "t" } }],
       // Finding 1250: an environment reference with a fallback that holds no user name.
       baseUrl: "https://${MODEL_HOST:-models.example.test}/v1",
       request: {
@@ -3433,8 +3456,11 @@ test("Configuration and Preset saves refuse a user name or password in proxy, ch
     },
     tts: { providers: { microsoft: { proxy: "${SPEECH_PROXY}" } } },
     env: {
-      HTTP_PROXY: "proxy.example:3128",
-      vars: { HTTPS_PROXY: "${CORP_PROXY}", NO_PROXY: "localhost,.svc,10.0.0.0/8" },
+      vars: {
+        HTTP_PROXY: "proxy.example:3128",
+        HTTPS_PROXY: "${CORP_PROXY}",
+        NO_PROXY: "localhost,.svc,10.0.0.0/8",
+      },
     },
   };
   await acceptedOnSave(context, accepted, {
@@ -3617,7 +3643,7 @@ test("Configuration and Preset saves refuse a user name or password in a URL in 
     LOG_LEVEL: "debug",
   };
   const accepted = {
-    env: { ...env, vars: env },
+    env: { vars: env },
     skills: { entries: { docs: { env } } },
     hooks: { internal: { entries: { audit: { env } } } },
     models: { providers: { local: { localService: { command: "/usr/bin/serve", env } } } },

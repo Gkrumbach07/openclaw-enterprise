@@ -60,7 +60,7 @@ export function registerPluginSnapshotCase(configuredController: ConfiguredContr
     const namespace = await createNamespace(controller, "plugin-api");
     const configuration = await createConfiguration(controller, namespace.id);
     const replacementConfiguration = await createConfiguration(controller, namespace.id, {
-      runtime: { revision: "replacement" },
+      messages: { responsePrefix: "replacement" },
     });
     selectPluginDriver(controller, new OCCPluginDriver());
     const installation = await controller.request("GET", "/installation");

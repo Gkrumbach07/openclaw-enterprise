@@ -241,6 +241,9 @@ omitted policies remain omitted until explicitly selected. Organization-wide
 installs support Disabled or Open when DMs are enabled; Disabled is recommended.
 The editor preserves `enterpriseOrgInstall` and `dm.enabled`; a native
 `dm.enabled: false` continues to block DMs regardless of the selected policy.
+The pinned runtime retired `enterpriseOrgInstall`. The
+[schema check](runtime-schema.md#save-time-check) refuses a save that contains
+it, so remove the key from a Configuration that still has it.
 
 #### Direct-message sessions
 

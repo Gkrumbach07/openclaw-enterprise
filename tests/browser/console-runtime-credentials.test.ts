@@ -524,8 +524,8 @@ test("active Agent can deploy the current saved draft as a new version", async (
   const configuration = record(await savedConfiguration(deployedId), "Deployed Configuration");
   const plugins = record(configuration.plugins, "Plugins");
   const entries = record(plugins.entries, "Plugin entries");
-  const knowledge = record(entries.knowledge, "Knowledge plugin");
-  assert.equal(record(knowledge.config, "Knowledge plugin configuration").marker, "current-draft");
+  const notes = record(entries.teamnotes, "Notes plugin");
+  assert.equal(record(notes.config, "Notes plugin configuration").marker, "current-draft");
 });
 
 test("unsaved Configuration blocks deployment from an admitted revision", async (t) => {

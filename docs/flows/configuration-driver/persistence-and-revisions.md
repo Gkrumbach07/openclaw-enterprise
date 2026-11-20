@@ -37,6 +37,8 @@ Preset save run this one set (`validateConfigurationContent` in
 [OCC](../../../packages/occ/src/index.ts)); a Preset value that waits on a
 variable is checked as far as its written text goes, and in full once filled.
 Preset save skips the catalog and runtime checks; its launch's Configuration runs them.
+On an API write, the [runtime schema check](../agent-configuration-schema.md) runs
+last, after the Driver's `validate`; Preset save skips it too.
 Create, update and provisioning first ask the Driver's optional
 [`validateSize`](../../reference/drivers/configuration.md#optional-validation)
 to refuse a document too large to store, so no content rule walks it. Its

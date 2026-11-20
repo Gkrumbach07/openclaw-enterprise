@@ -15,6 +15,7 @@ import {
   ChannelCredentialError,
   ConfigurationGenerationConflictError,
   ConfigurationHarnessError,
+  ConfigurationValuesError,
   ConfigurationSizeError,
   CredentialGatewayNotConfiguredError,
   CredentialSourceConfigError,
@@ -835,6 +836,16 @@ export function requestFailure(error: unknown, denied?: DeniedRequest): RequestF
   }
   if (error instanceof SecretValueError) {
     return failure(400, "INVALID_REQUEST", error.message, [{ path: "/value", code: error.code }]);
+  }
+  if (error instanceof ConfigurationValuesError) {
+    // Each detail names a setting and what is accepted there, never the submitted value. The
+    // error contract lists at most 32.
+    return failure(
+      400,
+      "INVALID_REQUEST",
+      error.message,
+      error.details.slice(0, 32).map((detail) => ({ ...detail, path: cappedPath(detail.path) })),
+    );
   }
   if (error instanceof ConfigurationHarnessError) {
     return failure(400, "INVALID_REQUEST", error.message);

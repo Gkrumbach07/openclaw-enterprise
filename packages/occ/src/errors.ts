@@ -1,6 +1,8 @@
 import type {
   AuthorizationEvidence,
   AuthorizationRequest,
+  ErrorDetail,
+  OpenClawConfigurationDocument,
   ResourceRef,
   RuntimeLogSourceId,
   SecretConsumers,
@@ -445,6 +447,34 @@ export class ConfigurationHarnessError extends ScopeViolationError {
   constructor(message: string) {
     super(message);
     this.name = "ConfigurationHarnessError";
+  }
+}
+
+/** One setting a ConfigurationValuesCheck refuses: its JSON Pointer in the values, and why. */
+export type ConfigurationValueProblem = Required<Pick<ErrorDetail, "path" | "code" | "message">>;
+
+/**
+ * A check of Configuration values that the caller's composition supplies: the API passes the
+ * check against the pinned runtime's configuration schema. OCC runs it on Configuration create
+ * and update, Agent provisioning and the Agent create check, after its own content rules and the
+ * Configuration Driver's, so their more specific refusals come first. A message names the setting
+ * and what is accepted, never the submitted value.
+ */
+export type ConfigurationValuesCheck = (
+  values: Readonly<OpenClawConfigurationDocument>,
+) => readonly ConfigurationValueProblem[];
+
+/**
+ * Configuration values that a ConfigurationValuesCheck refuses. The message is the first
+ * problem's; `details` name every refused setting by its JSON Pointer in the request body.
+ */
+export class ConfigurationValuesError extends ConfigurationHarnessError {
+  readonly details: readonly ConfigurationValueProblem[];
+
+  constructor(details: readonly [ConfigurationValueProblem, ...ConfigurationValueProblem[]]) {
+    super(details[0].message);
+    this.name = "ConfigurationValuesError";
+    this.details = details;
   }
 }
 

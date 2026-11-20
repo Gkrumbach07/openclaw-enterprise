@@ -688,7 +688,10 @@ test("ordinary deploy rejects request bodies and admits the current saved genera
   const reviewed = await controller.request("GET", configurationPath);
   assert.equal(reviewed.status, 200);
   const updated = await controller.request("PATCH", configurationPath, {
-    body: { values: { temperature: "1" }, expectedGeneration: reviewed.data.generation },
+    body: {
+      values: { messages: { responsePrefix: "1" } },
+      expectedGeneration: reviewed.data.generation,
+    },
   });
   assert.equal(updated.status, 200, JSON.stringify(updated.body));
   assert.equal(updated.data.generation, reviewed.data.generation + 1);
@@ -1864,7 +1867,7 @@ test("two Namespaces become independently ready and deletion tombstones only its
   const namespaceB = await createNamespace(controller, "lifecycle-b");
 
   const originalConfiguration = await createConfiguration(controller, namespaceA.id, {
-    model: "original",
+    messages: { responsePrefix: "original" },
   });
   const agentA = await injectedRequest(fixture.app, "POST", `/namespaces/${namespaceA.id}/agents`, {
     body: { name: "lifecycle-agent-a", configurationId: originalConfiguration.id },
@@ -1872,8 +1875,7 @@ test("two Namespaces become independently ready and deletion tombstones only its
   assert.equal(agentA.status, 201);
   assert.equal(agentA.data.configurationId, originalConfiguration.id);
   const firstConfiguration = await createConfiguration(controller, namespaceA.id, {
-    model: "first",
-    temperature: "0",
+    messages: { responsePrefix: "first", ackReaction: "0" },
   });
   const replacedReference = await injectedRequest(
     fixture.app,
@@ -1927,7 +1929,10 @@ test("two Namespaces become independently ready and deletion tombstones only its
   assert.equal(readyDeployment.data.configurationGeneration, 1);
   assert.deepEqual(
     readyDeployment.data.configuration,
-    admittedConfiguration(servedAs({ model: "first", temperature: "0" }, agentA.data.name), "info"),
+    admittedConfiguration(
+      servedAs({ messages: { responsePrefix: "first", ackReaction: "0" } }, agentA.data.name),
+      "info",
+    ),
   );
   assert.deepEqual(readyDeployment.data.harness, {
     id: "openclaw",
@@ -1944,8 +1949,7 @@ test("two Namespaces become independently ready and deletion tombstones only its
   assert.equal(Object.hasOwn(readyDeployment.data, "servicePrincipalId"), false);
 
   const secondConfiguration = await createConfiguration(controller, namespaceA.id, {
-    model: "second",
-    temperature: "1",
+    messages: { responsePrefix: "second", ackReaction: "1" },
   });
   const nextReference = await injectedRequest(
     fixture.app,
@@ -1972,7 +1976,7 @@ test("two Namespaces become independently ready and deletion tombstones only its
   assert.deepEqual(
     nextDeployment.data.configuration,
     admittedConfiguration(
-      servedAs({ model: "second", temperature: "1" }, agentA.data.name),
+      servedAs({ messages: { responsePrefix: "second", ackReaction: "1" } }, agentA.data.name),
       "info",
     ),
   );
@@ -2810,7 +2814,7 @@ test("ordinary deployment admits only the Configuration and Drivers whose channe
             "PATCH",
             `/namespaces/${namespace.id}/configurations/${agent.configurationId}`,
             {
-              body: { values: { temperature: "1" } },
+              body: { values: { messages: { responsePrefix: "1" } } },
             },
           );
           assert.equal(updated.status, 200, JSON.stringify(updated.body));

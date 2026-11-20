@@ -299,7 +299,7 @@ export function registerConfigurationCredentialSaveCases(
               },
             },
           },
-          image: { models: [{ request: { headers } }] },
+          image: { request: { headers } },
         },
         web: {
           fetch: { headers: { Authorization: "Bearer ${FETCH_TOKEN}", "User-Agent": "oce" } },
@@ -454,7 +454,7 @@ export function registerConfigurationCredentialSaveCases(
         googlechat: {
           enabled: false,
           serviceAccount: environmentReference("GOOGLECHAT_SERVICE_ACCOUNT"),
-          serviceAccountEmail: "chat-bot@example.iam.gserviceaccount.com",
+          serviceAccountFile: "/run/secrets/googlechat-service-account.json",
         },
         slack: { enabled: false, channels: { "secret-launch": { requireMention: true } } },
       },

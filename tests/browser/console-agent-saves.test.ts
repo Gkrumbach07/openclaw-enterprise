@@ -234,7 +234,7 @@ test("saving a Configuration with negative zero confirms the value sent as JSON"
   const response = await patched;
   assert.equal(response.status(), 200);
   const sent = response.request().postDataJSON().values;
-  assert.equal(sent.plugins.entries.knowledge.config.marker, 0);
+  assert.equal(sent.plugins.entries.teamnotes.config.marker, 0);
   assert.deepEqual((await response.json()).data.values, sent);
   const saved = page.getByText("Configuration saved.", { exact: true });
   await saved.or(page.getByText(/Outcome unknown. Configuration may have been saved/)).waitFor();
@@ -633,7 +633,7 @@ const inPlaceCases: {
     focus: "Save Configuration",
     described: true,
     description:
-      'Draft reloaded. Your edits are applied over the reloaded Configuration. Another browser also changed /plugins/entries/knowledge/config/marker (saved: "theirs"); yours are shown. Review them, then save.',
+      'Draft reloaded. Your edits are applied over the reloaded Configuration. Another browser also changed /plugins/entries/teamnotes/config/marker (saved: "theirs"); yours are shown. Review them, then save.',
     deployable: false,
   },
 ];
@@ -1943,9 +1943,9 @@ test("a Configuration conflict merges the JSON edits over the reread document", 
       ...values.plugins,
       entries: {
         ...values.plugins.entries,
-        knowledge: {
-          ...values.plugins.entries.knowledge,
-          config: { ...values.plugins.entries.knowledge.config, ...config },
+        teamnotes: {
+          ...values.plugins.entries.teamnotes,
+          config: { ...values.plugins.entries.teamnotes.config, ...config },
         },
       },
     },
@@ -1965,7 +1965,7 @@ test("a Configuration conflict merges the JSON edits over the reread document", 
     .getByRole("status")
     .filter({
       hasText:
-        'Draft reloaded. Your edits are applied over the reloaded Configuration. Another browser also changed /plugins/entries/knowledge/config/marker (saved: "theirs"); yours are shown. Both browsers changed different keys in /plugins/entries/knowledge/config; check they still fit together. Review them, then save.',
+        'Draft reloaded. Your edits are applied over the reloaded Configuration. Another browser also changed /plugins/entries/teamnotes/config/marker (saved: "theirs"); yours are shown. Both browsers changed different keys in /plugins/entries/teamnotes/config; check they still fit together. Review them, then save.',
     })
     .waitFor();
   assert.equal(await focusedText(page), "Save Configuration");

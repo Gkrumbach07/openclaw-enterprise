@@ -147,7 +147,7 @@ async function seedTenant(fixture: Fixture) {
   });
   const configuration = await created(fixture, `${base}/configurations`, {
     kind: "agent",
-    values: { model: "example-model" },
+    values: { messages: { responsePrefix: "example-model" } },
     secretBindings: {
       MODEL_API_KEY: { source: { kind: "secret", namespaceId: namespace.id, id: secret.id } },
     },
@@ -546,7 +546,7 @@ test("import re-creates tenants under new IDs, waits for readiness, and resumes"
     (await request(fixture.app, `${base}/configurations/${saved.ids[seeded.configuration.id]}`))
       .payload.data,
   );
-  assert.deepEqual(configuration.values, { model: "example-model" });
+  assert.deepEqual(configuration.values, { messages: { responsePrefix: "example-model" } });
   assert.deepEqual(object(object(configuration.secretBindings).MODEL_API_KEY).source, {
     kind: "secret",
     namespaceId,
@@ -1427,7 +1427,7 @@ test("import refuses non-array destination inventories before adopting a populat
   const base = `/namespaces/${destination.id}`;
   const configuration = await created(fixture, `${base}/configurations`, {
     kind: "agent",
-    values: { model: "destination-model" },
+    values: { messages: { responsePrefix: "destination-model" } },
   });
   const existingAgent = await created(fixture, `${base}/agents`, {
     name: "existing-agent",
@@ -1555,7 +1555,7 @@ test("discard validates every tenant's late collections before deleting any Agen
     `/namespaces/${laterNamespace.id}/configurations`,
     {
       kind: "agent",
-      values: { model: "later-model" },
+      values: { messages: { responsePrefix: "later-model" } },
     },
   );
   await created(fixture, `/namespaces/${laterNamespace.id}/agents`, {

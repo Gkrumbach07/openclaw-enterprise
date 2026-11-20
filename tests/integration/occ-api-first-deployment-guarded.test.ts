@@ -522,7 +522,7 @@ test("guarded first deployment rechecks configuration after outside-transaction 
             : await controller.request(
                 "PATCH",
                 `/namespaces/${namespace.id}/configurations/${agent.configurationId}`,
-                { body: { values: { temperature: "1" } } },
+                { body: { values: { messages: { responsePrefix: "1" } } } },
               );
         assert.equal(updated.status, 200, JSON.stringify(updated.body));
       } else if (change === "late-channel" || change === "late-configuration") {
@@ -542,7 +542,7 @@ test("guarded first deployment rechecks configuration after outside-transaction 
       } else if (change === "configuration") {
         const driver = controller.fixture.configurationDriver;
         const saved = await driver.read({ namespaceId: namespace.id, id: agent.configurationId });
-        await driver.update({ ...saved, values: { temperature: "1" } });
+        await driver.update({ ...saved, values: { messages: { responsePrefix: "1" } } });
       } else if (change === "configuration-driver") {
         const driver = createTestConfigurationDriver({ id: "replacement-configuration" });
         controller.fixture.controller.registerDriver(driver);

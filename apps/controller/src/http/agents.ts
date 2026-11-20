@@ -25,7 +25,10 @@ import {
   type ValidateAgentCreateInput,
 } from "@openclaw-enterprise/occ";
 import type { FastifyRequest } from "fastify";
-import { loadRuntimeConfigurationSchema } from "../admission/runtime-configuration-schema.ts";
+import {
+  checkRuntimeConfigurationValues,
+  loadRuntimeConfigurationSchema,
+} from "../admission/runtime-configuration-schema.ts";
 import {
   normalizeNativeAdminDomain,
   prepareNativeAdminConfiguration,
@@ -296,6 +299,7 @@ export function createAgentHandlers(options: AgentHandlerOptions) {
               prepare: prepareBrowserAccess,
             }
           : undefined,
+        checkRuntimeConfigurationValues,
       );
       const result = {
         provisioning: clientAgentProvisioning(provisioned.provisioning, namespaceId),
@@ -356,6 +360,7 @@ export function createAgentHandlers(options: AgentHandlerOptions) {
         context.actorId,
         { ...input, namespaceId },
         options.resolveHarness,
+        checkRuntimeConfigurationValues,
       );
       reply.header("cache-control", "no-store");
       reply.status(204).send();

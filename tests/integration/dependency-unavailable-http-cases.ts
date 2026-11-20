@@ -63,7 +63,8 @@ async function configurationFixture(
 
 function createConfiguration(fixture: Fixture, namespace: NamespaceWire): Promise<HttpResponse> {
   return fixture.request("POST", `/namespaces/${namespace.id}/configurations`, {
-    body: { kind: "agent", values: { note: SECRET_VALUE } },
+    // Free text in a setting the pinned runtime has, so the save reaches the Configuration Driver.
+    body: { kind: "agent", values: { messages: { responsePrefix: SECRET_VALUE } } },
   });
 }
 

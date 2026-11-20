@@ -163,7 +163,12 @@ type BrokerProxyRefusal = {
   readonly label: string;
   readonly networkProxy: OpenClawConfigurationValue;
   readonly message: string;
+  // What the pinned runtime's schema requires of the setting, when the schema check refuses the
+  // value at save. Only a Configuration stored before that check can then hold it.
+  readonly schemaRequirement?: string;
 };
+
+const PROXY_SETTING = "plugins.entries.codex.config.appServer.networkProxy";
 
 // Kubernetes Compute sends a Codex Harness's repository traffic through its Codex network proxy
 // and refused a proxy setting that blocks the broker only in preparation, after a dedicated
@@ -177,21 +182,25 @@ const brokerProxyRefusals: readonly BrokerProxyRefusal[] = [
     label: "unknown mode",
     networkProxy: { enabled: true, mode: "offline" },
     message: BROKER_PROXY_MODE,
+    schemaRequirement: `${PROXY_SETTING}.mode must be one of "limited", "full"`,
   },
   {
     label: "local binding",
     networkProxy: { enabled: true, allowLocalBinding: "yes" },
     message: BROKER_PROXY_LOCAL_BINDING,
+    schemaRequirement: `${PROXY_SETTING}.allowLocalBinding must be a boolean, not a string`,
   },
   {
     label: "domains list",
     networkProxy: { enabled: true, domains: ["github.com"] },
     message: BROKER_PROXY_DOMAINS,
+    schemaRequirement: `${PROXY_SETTING}.domains must be an object, not a list`,
   },
   {
     label: "domain decision",
     networkProxy: { enabled: true, domains: { "github.com": "block" } },
     message: BROKER_PROXY_DOMAIN_DECISION,
+    schemaRequirement: `${PROXY_SETTING}.domains["github.com"] must be one of "allow", "deny"`,
   },
   {
     label: "empty host",
@@ -595,7 +604,8 @@ export function registerRepositoryCredentialsDeploymentAdmissionCases({
   });
 
   test("Agent save and deployment refuse a Codex network proxy that blocks the repository broker", async (t) => {
-    const f = await fixture(t, { harness: "codex" });
+    const configurationDriver = createTestConfigurationDriver();
+    const f = await fixture(t, { harness: "codex", configurationDriver });
     const configurationPath = `/namespaces/${f.namespace.id}/configurations/${f.configuration.id}`;
     // A limited proxy with its own allowlist lets Compute add the broker host: it deploys.
     const allowing = await f.request("PATCH", configurationPath, {
@@ -618,12 +628,28 @@ export function registerRepositoryCredentialsDeploymentAdmissionCases({
       202,
     );
 
-    for (const { label, networkProxy, message } of brokerProxyRefusals) {
-      // Configuration edits succeed independently of the Agent's next deployment.
-      const edited = await f.request("PATCH", configurationPath, {
-        values: codexProxyValues("codex", networkProxy),
-      });
-      assert.equal(edited.status, 200, `${label}: ${JSON.stringify(edited)}`);
+    for (const { label, networkProxy, message, schemaRequirement } of brokerProxyRefusals) {
+      const values = codexProxyValues("codex", networkProxy);
+      const edited = await f.request("PATCH", configurationPath, { values });
+      if (schemaRequirement === undefined) {
+        // Configuration edits succeed independently of the Agent's next deployment.
+        assert.equal(edited.status, 200, `${label}: ${JSON.stringify(edited)}`);
+      } else {
+        // The pinned runtime refuses this value whatever the Agent binds, so the schema check
+        // refuses the edit. A Configuration saved before that check can still hold the value:
+        // store it through the Driver, and Agent save and deployment refuse it as before.
+        assertBrokerProxyRefused(
+          edited,
+          `Configuration setting ${schemaRequirement}.`,
+          `${label} edit`,
+        );
+        const stored = configurationDriver.stored({
+          namespaceId: f.namespace.id,
+          id: f.configuration.id,
+        });
+        assert.ok(stored, "Expected the stored Configuration");
+        await configurationDriver.update({ ...stored, values: { ...values } });
+      }
       assertBrokerProxyRefused(
         await f.request("POST", f.collection, {
           name: `Repository Agent ${randomUUID()}`,
@@ -724,7 +750,7 @@ export function registerRepositoryCredentialsDeploymentAdmissionCases({
       value: "synthetic-model-key",
     });
     const { data: modelSecret } = checkedEnvelope(secret, SecretResponse, 201);
-    for (const { label, networkProxy, message } of brokerProxyRefusals) {
+    for (const { label, networkProxy, message, schemaRequirement } of brokerProxyRefusals) {
       assertBrokerProxyRefused(
         await f.request("POST", `${f.collection}/provision`, {
           requestId: `req_${randomUUID()}`,
@@ -734,7 +760,10 @@ export function registerRepositoryCredentialsDeploymentAdmissionCases({
           harnessAuth: { method: "api_key", source: modelSecret.ref },
           repositoryBindings: selection,
         }),
-        message,
+        // The plan's Configuration rules run before its Agent rules, as a Configuration save
+        // runs before an Agent save. A value the pinned runtime refuses whatever the Agent binds
+        // gets the schema check's refusal; removing the repository bindings would not fix it.
+        schemaRequirement === undefined ? message : `Configuration setting ${schemaRequirement}.`,
         `${label} provision`,
       );
     }

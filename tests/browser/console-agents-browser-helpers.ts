@@ -821,7 +821,7 @@ type NativeValues<Channels> = Omit<HarnessConfiguration, "plugins"> & {
   channels: Channels;
   plugins: Omit<NonNullable<HarnessConfiguration["plugins"]>, "entries"> & {
     entries: Partial<NonNullable<HarnessConfiguration["plugins"]>["entries"]> & {
-      knowledge: { enabled: boolean; config: Record<string, string | number[]> };
+      teamnotes: { enabled: boolean; config: Record<string, string | number[]> };
     };
   };
 };
@@ -848,7 +848,7 @@ export function nativeValues(
   const harnessId = options.harnessId ?? "openclaw";
   const providerModel = options.providerModel ?? (harnessId === "codex" ? "gpt-5.1" : "gpt-4.1");
   const base = createHarnessConfiguration(harnessId, providerModel);
-  const knowledgeConfig: Record<string, string | number[]> = { marker, thresholds: [1, 2, 3] };
+  const notesConfig: Record<string, string | number[]> = { marker, thresholds: [1, 2, 3] };
   const basePlugins = base.plugins;
   const basePluginEntries = basePlugins?.entries ?? {};
   return {
@@ -858,9 +858,9 @@ export function nativeValues(
       ...basePlugins,
       entries: {
         ...basePluginEntries,
-        knowledge: {
+        teamnotes: {
           enabled: true,
-          config: knowledgeConfig,
+          config: notesConfig,
         },
       },
     },

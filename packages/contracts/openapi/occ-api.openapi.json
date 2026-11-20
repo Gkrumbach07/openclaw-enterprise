@@ -17698,7 +17698,7 @@
                         },
                         "schema": {
                           "additionalProperties": {},
-                          "description": "The JSON Schema (draft-07) that `openclaw config schema` prints at that commit. It describes the native configuration document an Agent Configuration holds in `values`.",
+                          "description": "The JSON Schema (draft-07) that `openclaw config schema` prints at that commit. It describes the native configuration document an Agent Configuration holds in `values`. Configuration create and update, Agent provisioning and the Agent create check refuse `values` with an unknown setting, a wrong type, a value outside the fixed choices or a number out of range under it. The runtime checks required settings, text patterns and formats when it starts.",
                           "type": "object"
                         },
                         "uiHints": {
@@ -17802,7 +17802,7 @@
             "description": "A required dependency is unavailable."
           }
         },
-        "summary": "Get the configuration JSON Schema and display hints of the pinned OpenClaw runtime, which describe Agent Configuration values",
+        "summary": "Get the configuration JSON Schema and display hints of the pinned OpenClaw runtime, which Agent Configuration values are checked against",
         "tags": ["Agents"],
         "x-openclaw-permissions": [
           { "action": "read", "resourceKind": "namespace", "scope": "requested" }

@@ -3,6 +3,7 @@ import {
   MUTATION_BACKEND_BUDGET_MS,
   withMutationDeadline,
 } from "../admission/mutation-deadline.ts";
+import { checkRuntimeConfigurationValues } from "../admission/runtime-configuration-schema.ts";
 import { removedAccessBindingDetails, type ResourceHandlers } from "./types.ts";
 
 // A create, update or delete sends no Configuration or Secret backend call later than
@@ -24,14 +25,18 @@ export const configurationHandlers = {
     const deadline = Date.now() + MUTATION_BACKEND_BUDGET_MS;
     const configuration = await controller.transact(async (unit) => {
       const created = await withMutationDeadline(deadline, () =>
-        controller.createConfiguration(context.actorId, {
-          namespaceId,
-          kind: body?.kind as "agent",
-          values: body?.values as OpenClawConfigurationDocument,
-          ...(body?.secretBindings === undefined
-            ? {}
-            : { secretBindings: body.secretBindings as SecretBindings }),
-        }),
+        controller.createConfiguration(
+          context.actorId,
+          {
+            namespaceId,
+            kind: body?.kind as "agent",
+            values: body?.values as OpenClawConfigurationDocument,
+            ...(body?.secretBindings === undefined
+              ? {}
+              : { secretBindings: body.secretBindings as SecretBindings }),
+          },
+          checkRuntimeConfigurationValues,
+        ),
       );
       await unit.audit.append(
         mutationEvent({ kind: "configuration", id: created.id, namespaceId }),
@@ -74,17 +79,21 @@ export const configurationHandlers = {
     const deadline = Date.now() + MUTATION_BACKEND_BUDGET_MS;
     const configuration = await controller.transact(async (unit) => {
       const updated = await withMutationDeadline(deadline, () =>
-        controller.updateConfiguration(context.actorId, {
-          namespaceId,
-          configurationId: params.configurationId as string,
-          values: body?.values as OpenClawConfigurationDocument,
-          ...(body?.secretBindings === undefined
-            ? {}
-            : { secretBindings: body.secretBindings as SecretBindings }),
-          ...(body?.expectedGeneration === undefined
-            ? {}
-            : { expectedGeneration: body.expectedGeneration as number }),
-        }),
+        controller.updateConfiguration(
+          context.actorId,
+          {
+            namespaceId,
+            configurationId: params.configurationId as string,
+            values: body?.values as OpenClawConfigurationDocument,
+            ...(body?.secretBindings === undefined
+              ? {}
+              : { secretBindings: body.secretBindings as SecretBindings }),
+            ...(body?.expectedGeneration === undefined
+              ? {}
+              : { expectedGeneration: body.expectedGeneration as number }),
+          },
+          checkRuntimeConfigurationValues,
+        ),
       );
       await unit.audit.append(
         mutationEvent({ kind: "configuration", id: updated.id, namespaceId }),

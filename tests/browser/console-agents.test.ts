@@ -2490,7 +2490,7 @@ test("Agent creation preserves unrelated edited JSON across model changes and re
     models: [{ id: "gpt-4.1", name: "gpt-4.1" }],
   });
   assert.equal(retained.models.providers.openai, undefined);
-  assert.equal(retained.plugins.entries.knowledge.config.marker, "manual-edit");
+  assert.equal(retained.plugins.entries.teamnotes.config.marker, "manual-edit");
   assert.deepEqual(retained.agents.defaults.models["codex/gpt-4.1"], {
     alias: "Primary assistant",
     params: { temperature: 0.4 },

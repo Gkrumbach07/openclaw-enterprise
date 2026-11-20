@@ -682,7 +682,7 @@ test("reviewed scoped Driver packages install, activate, and fail closed", async
         fixture,
         "POST",
         `/namespaces/${data(namespace).id}/configurations`,
-        { kind: "agent", values: { model: "external-driver-proof" } },
+        { kind: "agent", values: { messages: { responsePrefix: "external-driver-proof" } } },
       );
       assert.equal(created.status, 201, JSON.stringify(created));
       const observed = await request(
@@ -691,7 +691,9 @@ test("reviewed scoped Driver packages install, activate, and fail closed", async
         `/namespaces/${data(namespace).id}/configurations/${data(created).id}`,
       );
       assert.equal(observed.status, 200, JSON.stringify(observed));
-      assert.deepEqual(data(observed).values, { model: "external-driver-proof" });
+      assert.deepEqual(data(observed).values, {
+        messages: { responsePrefix: "external-driver-proof" },
+      });
 
       const loadsBeforeRestriction = fixture.iamLoadCount;
       fixture.restrictNamespaceDelete();

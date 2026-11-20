@@ -7,8 +7,11 @@ interface InvalidPlan {
   description: string;
   body: unknown;
   message: string;
-  details?: readonly { path: string; code: string }[];
+  details?: readonly { path: string; code: string; message?: string }[];
 }
+
+const UNKNOWN_SETTING =
+  "Configuration setting tools.web.serch is not a setting of the pinned OpenClaw runtime.";
 
 export function invalidInlinePlans(
   requestBody: (overrides?: Record<string, unknown>) => Record<string, unknown>,
@@ -96,6 +99,22 @@ export function invalidInlinePlans(
       }),
       message:
         "The request does not match the operation contract: body /configuration/secretBindings has an unsupported value (expected at most 64 fields).",
+    },
+    {
+      // The pinned runtime's schema has no tools.web.serch. The plan is refused before anything
+      // is saved, and the detail names the setting under the inline Configuration.
+      description: "Configuration values the runtime schema refuses",
+      body: requestBody({
+        configuration: { values: { tools: { web: { serch: { enabled: true } } } } },
+      }),
+      message: UNKNOWN_SETTING,
+      details: [
+        {
+          path: "/configuration/values/tools/web/serch",
+          code: "UNKNOWN_FIELD",
+          message: UNKNOWN_SETTING,
+        },
+      ],
     },
     {
       description: "non-env delivery",

@@ -562,7 +562,6 @@ export function registerSshAdmissionCases(): void {
         { auth: { token: "synthetic-gateway-token" } },
         setting("gateway.auth.token", "is not a supported native gateway authentication field"),
       ],
-      ["auth-not-object", { auth: "password" }, setting("gateway.auth", "must be an object")],
       [
         "other-password-variable",
         {
@@ -668,6 +667,30 @@ export function registerSshAdmissionCases(): void {
         assert.deepEqual(await readRevisions(controller, `${collection}/${agent.id}`), []);
       }
     }
+    // gateway.auth as text is not in the pinned runtime's schema, so the schema check refuses the
+    // save. Deploy still names the setting for a row stored before that check.
+    const textAuth = { ...values, gateway: { ...values.gateway, auth: "password" } };
+    const refusedSave = await controller.request(
+      "POST",
+      `/namespaces/${namespace.id}/configurations`,
+      { body: { kind: "agent", values: textAuth } },
+    );
+    assert.equal(
+      checkApiError(refusedSave, 400, "INVALID_REQUEST").message,
+      setting("gateway.auth", "must be an object, not a string"),
+    );
+    const storedConfiguration = await createConfiguration(controller, namespace.id, values);
+    const storedAgent = await createAgentFor("gateway-auth-not-object", storedConfiguration.id);
+    const { configurationDriver } = controller.fixture;
+    const stored = await configurationDriver.read({
+      namespaceId: namespace.id,
+      id: storedConfiguration.id,
+    });
+    await configurationDriver.update({ ...stored, values: textAuth });
+    assert.equal(
+      checkApiError(await deploy(storedAgent), 409, "RESOURCE_CONFLICT").message,
+      setting("gateway.auth", "must be an object"),
+    );
 
     // Agent save passes no bindings (a Configuration may stage them later); deploy refuses them.
     const secretResponse = await controller.request("POST", `/namespaces/${namespace.id}/secrets`, {

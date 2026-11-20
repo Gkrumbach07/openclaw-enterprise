@@ -33,7 +33,8 @@ const collection = (namespaceId: string) => `/namespaces/${namespaceId}/configur
 const configurationPath = (namespaceId: string, configurationId: string) =>
   `${collection(namespaceId)}/${configurationId}`;
 const notes = (text: OpenClawConfigurationValue): OpenClawConfigurationDocument => ({
-  plugins: { entries: { knowledge: { enabled: true, config: { notes: text } } } },
+  // The pinned runtime bundles no `teamnotes` plugin, so its schema leaves this configuration open.
+  plugins: { entries: { teamnotes: { enabled: true, config: { notes: text } } } },
 });
 function createFixture(t: TestContext) {
   return createReadyConsoleNamespace(t, "Configuration body limits", { providers: [] });
@@ -191,7 +192,7 @@ test("Configuration writes refuse a serialized wide body without changing stored
   );
   assert.equal(error.code, "INVALID_REQUEST");
   assert.deepEqual(error.details, [
-    { path: "/values/plugins/entries/knowledge/config/notes/0", code: "INVALID_FORMAT" },
+    { path: "/values/plugins/entries/teamnotes/config/notes/0", code: "INVALID_FORMAT" },
   ]);
   const unchanged = await fixture.request("GET", configurationPath(namespace.id, existing.id));
   assert.deepEqual(

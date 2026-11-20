@@ -177,14 +177,14 @@ export function registerConfigurationCrudCases(fixtures: ConfigurationHttpLifecy
     const configurationDriver = createConfigurationBackend();
     const { collection, ...context } = await fixture({ configurationDriver });
     const created = await request(context.app, "POST", collection, {
-      body: { kind: "agent", values: { model: "created" } },
+      body: { kind: "agent", values: { messages: { responsePrefix: "created" } } },
     });
     assert.equal(created.status, 201, JSON.stringify(created.body));
     assert.ok(Check(schemaContext, ConfigurationResponse, created.body));
     const pathname = `${collection}/${created.body.data.id}`;
 
     const first = await request(context.app, "PATCH", pathname, {
-      body: { values: { model: "first" }, expectedGeneration: 1 },
+      body: { values: { messages: { responsePrefix: "first" } }, expectedGeneration: 1 },
     });
     assert.equal(first.status, 200, JSON.stringify(first.body));
     assert.ok(Check(schemaContext, ConfigurationResponse, first.body));
@@ -195,13 +195,13 @@ export function registerConfigurationCrudCases(fixtures: ConfigurationHttpLifecy
     const writes: (OpenClawConfigurationValue | undefined)[] = [];
     const update = configurationDriver.update;
     configurationDriver.update = (configuration) => {
-      writes.push(configuration.values.model);
+      writes.push(configuration.values.messages);
       return update(configuration);
     };
     // Any generation but the current one is refused, a generation ahead of it included.
     for (const expectedGeneration of [1, 3]) {
       const stale = await request(context.app, "PATCH", pathname, {
-        body: { values: { model: "stale" }, expectedGeneration },
+        body: { values: { messages: { responsePrefix: "stale" } }, expectedGeneration },
       });
       assert.equal(stale.status, 409, JSON.stringify(stale.body));
       assert.ok(Check(ErrorResponse, stale.body));
@@ -220,12 +220,14 @@ export function registerConfigurationCrudCases(fixtures: ConfigurationHttpLifecy
     const read = await request(context.app, "GET", pathname);
     assert.ok(Check(schemaContext, ConfigurationResponse, read.body));
     assert.equal(read.body.data.generation, 2);
-    assert.deepEqual(read.body.data.values, { model: "first" });
-    assert.deepEqual(configurationDriver.storedConfigurations()[0]?.values, { model: "first" });
+    assert.deepEqual(read.body.data.values, { messages: { responsePrefix: "first" } });
+    assert.deepEqual(configurationDriver.storedConfigurations()[0]?.values, {
+      messages: { responsePrefix: "first" },
+    });
 
     for (const expectedGeneration of [0, -1, 1.5, "2", null, Number.MAX_SAFE_INTEGER + 1]) {
       const invalid = await request(context.app, "PATCH", pathname, {
-        body: { values: { model: "invalid" }, expectedGeneration },
+        body: { values: { messages: { responsePrefix: "invalid" } }, expectedGeneration },
       });
       assert.equal(invalid.status, 400, JSON.stringify(invalid.body));
       assert.ok(Check(ErrorResponse, invalid.body));
@@ -233,12 +235,12 @@ export function registerConfigurationCrudCases(fixtures: ConfigurationHttpLifecy
     }
 
     const unchecked = await request(context.app, "PATCH", pathname, {
-      body: { values: { model: "unchecked" } },
+      body: { values: { messages: { responsePrefix: "unchecked" } } },
     });
     assert.equal(unchecked.status, 200, JSON.stringify(unchecked.body));
     assert.ok(Check(schemaContext, ConfigurationResponse, unchecked.body));
     assert.equal(unchecked.body.data.generation, 3);
-    assert.deepEqual(writes, ["unchecked"]);
+    assert.deepEqual(writes, [{ responsePrefix: "unchecked" }]);
     assert.deepEqual(
       context.auditSink.events
         .filter((event) => event.resource.kind === "configuration")
@@ -265,7 +267,7 @@ export function registerConfigurationCrudCases(fixtures: ConfigurationHttpLifecy
     const { collection, namespace, ...context } = await fixture({ configurationDriver });
     client.addNamespace(namespace.id);
     const created = await request(context.app, "POST", collection, {
-      body: { kind: "agent", values: { model: "created" } },
+      body: { kind: "agent", values: { messages: { responsePrefix: "created" } } },
     });
     assert.equal(created.status, 201, JSON.stringify(created.body));
     assert.ok(Check(schemaContext, ConfigurationResponse, created.body));
@@ -283,7 +285,7 @@ export function registerConfigurationCrudCases(fixtures: ConfigurationHttpLifecy
     };
     const before = { ...client.calls };
     const slow = await request(context.app, "PATCH", pathname, {
-      body: { values: { model: "edited" } },
+      body: { values: { messages: { responsePrefix: "edited" } } },
     });
     assert.equal(slow.status, 503, JSON.stringify(slow.body));
     assert.ok(Check(ErrorResponse, slow.body));
@@ -302,12 +304,12 @@ export function registerConfigurationCrudCases(fixtures: ConfigurationHttpLifecy
     assert.equal(read.status, 200, JSON.stringify(read.body));
     assert.ok(Check(schemaContext, ConfigurationResponse, read.body));
     assert.equal(read.body.data.generation, 1);
-    assert.deepEqual(read.body.data.values, { model: "created" });
+    assert.deepEqual(read.body.data.values, { messages: { responsePrefix: "created" } });
 
     // Within the budget the same save succeeds.
     client.called = called;
     const saved = await request(context.app, "PATCH", pathname, {
-      body: { values: { model: "edited" } },
+      body: { values: { messages: { responsePrefix: "edited" } } },
     });
     assert.equal(saved.status, 200, JSON.stringify(saved.body));
     assert.ok(Check(schemaContext, ConfigurationResponse, saved.body));
@@ -354,7 +356,7 @@ export function registerConfigurationCrudCases(fixtures: ConfigurationHttpLifecy
     );
 
     const created = await request(context.app, "POST", collection, {
-      body: { kind: "agent", values: { model: "stable" } },
+      body: { kind: "agent", values: { messages: { responsePrefix: "stable" } } },
     });
     assert.equal(created.status, 201, JSON.stringify(created.body));
     assert.ok(Check(schemaContext, ConfigurationResponse, created.body));
@@ -475,7 +477,7 @@ export function registerConfigurationOwnershipCases(
       "POST",
       `/namespaces/${namespace.id}/configurations`,
       {
-        body: { kind: "agent", values: { model: "gpt-test" } },
+        body: { kind: "agent", values: { messages: { responsePrefix: "gpt-test" } } },
       },
     );
     assert.equal(created.status, 201, JSON.stringify(created.body));

@@ -1262,7 +1262,7 @@ test(
         `/namespaces/${defaultNamespaceId}/configurations`,
         {
           kind: "agent",
-          values: { model: "preserved-default" },
+          values: { messages: { responsePrefix: "preserved-default" } },
         },
       );
       assert.equal(defaultConfiguration.status, 201);

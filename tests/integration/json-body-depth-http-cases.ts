@@ -66,11 +66,12 @@ function nestedArrays(
 export const pointer = (prefix: string, levels: number, segment = "n") =>
   `${prefix}${`/${segment}`.repeat(levels)}`;
 
-// Native values with `config` holding `inner`: plugin configuration is free-form JSON.
-export const knowledge = (config: OpenClawConfigurationValue) => ({
-  plugins: { entries: { knowledge: { enabled: true, config } } },
+// Native values with `config` holding `inner`. The pinned runtime bundles no `teamnotes` plugin, so
+// its schema leaves this entry's configuration free-form JSON.
+export const notes = (config: OpenClawConfigurationValue) => ({
+  plugins: { entries: { teamnotes: { enabled: true, config } } },
 });
-export const KNOWLEDGE = "/plugins/entries/knowledge/config";
+export const NOTES = "/plugins/entries/teamnotes/config";
 
 type DepthRoute = {
   name: string;
@@ -185,7 +186,7 @@ export async function assertRefusedDepth(
   }
   // Strings and escapes that look like brackets do not count.
   const bracketText = '[[[{{{\\"\\\\'.repeat(20);
-  const values = knowledge(nested(MAX_DEPTH - 5, bracketText, `{[${bracketText}`));
+  const values = notes(nested(MAX_DEPTH - 5, bracketText, `{[${bracketText}`));
   const created = await fixture.request("POST", routes[0].path, {
     body: { kind: "agent", values },
   });
@@ -218,7 +219,7 @@ export async function assertRefusedDepth(
     ErrorResponse,
     "wide array with deep entries",
   );
-  assert.deepEqual(error, TOO_DEEP(`/values${KNOWLEDGE}/items/11${"/n".repeat(18)}`));
+  assert.deepEqual(error, TOO_DEEP(`/values${NOTES}/items/11${"/n".repeat(18)}`));
 }
 
 export async function assertRefusedLargeBody(
@@ -226,7 +227,7 @@ export async function assertRefusedLargeBody(
   path: string,
   sendRaw: SendRaw,
 ): Promise<void> {
-  const prefix = '{"kind":"agent","values":{"plugins":{"entries":{"knowledge":{"config":{"n":';
+  const prefix = '{"kind":"agent","values":{"plugins":{"entries":{"teamnotes":{"config":{"n":';
   const levels = Math.floor((6 * 1024 * 1024 - prefix.length) / 2);
   const text = `${prefix}${"[".repeat(levels)}${"]".repeat(levels)}}}}}}}`;
   assert.ok(Buffer.byteLength(text) > 6 * 1024 * 1024 - 64);
@@ -255,7 +256,7 @@ export async function assertRefusedLargeBody(
   const elapsedMs = performance.now() - started;
   peak = Math.max(peak, process.memoryUsage().heapUsed);
   const { error } = fixture.fixtureResponse(refused, 400, ErrorResponse, "6 MB Configuration");
-  assert.deepEqual(error, TOO_DEEP(`/values${KNOWLEDGE}/n${"/0".repeat(MAX_DEPTH - 5)}`));
+  assert.deepEqual(error, TOO_DEEP(`/values${NOTES}/n${"/0".repeat(MAX_DEPTH - 5)}`));
   // About 30 ms with the check, about 1 s without it.
   assert.ok(elapsedMs < 1000, `took ${Math.round(elapsedMs)} ms`);
   // Parsing it built millions of arrays: about 300 MB of heap. The request and body text

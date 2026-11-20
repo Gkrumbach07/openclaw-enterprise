@@ -391,7 +391,8 @@ export function registerConfigurationStoredCompatibilityCases(
     const variables = { key: { type: "string" } } satisfies Record<string, PresetVariable>;
     const template = (key: string): PresetConfigurationDraft => ({
       variables,
-      configuration: { values: { ...runtimeSelected, tools: { [key]: "x" } } },
+      // env.vars takes any variable name, so the filled key decides whether the launch saves.
+      configuration: { values: { ...runtimeSelected, env: { vars: { [key]: "x" } } } },
     });
     const suffixedKey = "{{ vars.key }}e";
     const suffixed = savedPreset(
@@ -404,9 +405,9 @@ export function registerConfigurationStoredCompatibilityCases(
     }
     assertRefused(
       await launchPreset(context, suffixed, { key: "$includ" }),
-      configIncludeRefusal("tools.$include"),
+      configIncludeRefusal("env.vars.$include"),
     );
-    const launched = await launchPreset(context, suffixed, { key: "custom-rul" });
+    const launched = await launchPreset(context, suffixed, { key: "CUSTOM_RUL" });
     assert.equal(launched.status, 201, JSON.stringify(launched.body));
   });
 

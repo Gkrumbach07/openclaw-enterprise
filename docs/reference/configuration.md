@@ -275,7 +275,8 @@ The Kubernetes Configuration Driver stores live native documents in tenant Confi
   `kind: "agent"` and provide a JSON object in `values`. Do not send `kind`,
   `generation`, or ownership fields in an update. When the message names a
   `baseUrl` or `api` field, correct that model provider setting; when it names
-  an `agents` setting, fix the roster as it says.
+  an `agents` setting, fix the roster as it says. `details` name settings the
+  [runtime schema](configuration/runtime-schema.md#save-time-check) refuses.
 - **Configuration operation returns `403`:** Verify exact-Namespace `create`
   or exact-Configuration `read`, `update`, or `delete` permission; check the
   selected Kubernetes identity's namespaced ConfigMap Role separately.
@@ -343,7 +344,6 @@ details compatibility checks.
 - [Controller worker lifecycle](controller.md)
 - [Update and deploy Agent revisions](../guides/topics/agent-revisions.md)
 - [Agent Configuration, versions, and deployment](agents.md)
-- [Agent configuration schema](configuration/runtime-schema.md)
 - [Kubernetes Compute Driver](drivers/kubernetes-compute.md)
 - [Identity and access management](authorization.md)
 - [Configuration lifecycle implementation](../../packages/occ/src/index.ts)
