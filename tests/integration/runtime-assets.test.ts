@@ -14,6 +14,7 @@ import {
 import { join } from "node:path";
 import test from "node:test";
 import { fileURLToPath, pathToFileURL } from "node:url";
+import { runtimeConfigSchemaStaleness } from "../../scripts/generate-runtime-config-schema.ts";
 import {
   parseRuntimeDownloadClientSelection,
   readRuntimeDownloadClients,
@@ -369,4 +370,11 @@ packages:
     provenance.openclawBridgePatchSha256,
     patches["openclaw-codex-read-only-paths.patch"],
   );
+});
+
+test("the committed OpenClaw configuration schema describes the pinned commit and carried patches", async () => {
+  // The API serves deploy/runtime/openclaw-config-schema.json as the pinned runtime's schema. A
+  // new pin or patch needs `pnpm config-schema:generate`; `pnpm config-schema:check` runs this
+  // same comparison.
+  assert.deepEqual(await runtimeConfigSchemaStaleness(), []);
 });

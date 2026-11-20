@@ -149,6 +149,8 @@ Local assembly omits broad suites. Run [source verification](../../docs/flows/co
 
 See the [JIT-free ARM64 Harness](code-mode/README.md).
 
+`openclaw-config-schema.json` is generated: see [Agent configuration schema](../../docs/reference/configuration/runtime-schema.md#keep-the-schema-current).
+
 ## Build a local runtime image
 
 For paired builds, see [QA prebuilds and caching](../../docs/testing/ci/qa-advisory.md#prebuild-local-qa-images).

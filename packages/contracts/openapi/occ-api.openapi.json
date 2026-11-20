@@ -17611,6 +17611,204 @@
         ]
       }
     },
+    "/namespaces/{namespaceId}/agents/configuration-schema": {
+      "get": {
+        "description": "Requires read permission on the requested Namespace.",
+        "operationId": "getAgentConfigurationSchema",
+        "parameters": [
+          {
+            "examples": {
+              "example": {
+                "summary": "Example parameter; replace resource IDs with values from your Installation.",
+                "value": "ns_123e4567-e89b-42d3-a456-426614174000"
+              }
+            },
+            "in": "path",
+            "name": "namespaceId",
+            "required": true,
+            "schema": {
+              "pattern": "^ns_[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "examples": {
+                  "example": {
+                    "summary": "Example response",
+                    "value": {
+                      "data": {
+                        "runtime": { "commit": "82b682c627ba8bfc2c2bd51cf46ad8f51c583857" },
+                        "schema": {
+                          "$schema": "http://json-schema.org/draft-07/schema#",
+                          "additionalProperties": false,
+                          "properties": {
+                            "gateway": {
+                              "additionalProperties": false,
+                              "properties": {
+                                "port": {
+                                  "exclusiveMinimum": 0,
+                                  "maximum": 65535,
+                                  "type": "integer"
+                                }
+                              },
+                              "type": "object"
+                            }
+                          },
+                          "type": "object"
+                        },
+                        "uiHints": {
+                          "gateway": {
+                            "advanced": true,
+                            "docsUrl": "https://docs.openclaw.ai/gateway/configuration",
+                            "label": "Gateway",
+                            "order": 30
+                          },
+                          "gateway.port": {
+                            "advanced": false,
+                            "help": "TCP port used by the gateway listener for API, web app, and channel-facing ingress paths.",
+                            "label": "Gateway Port"
+                          }
+                        }
+                      },
+                      "meta": { "requestId": "req_123e4567-e89b-42d3-a456-426614174000" }
+                    }
+                  }
+                },
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "data": {
+                      "additionalProperties": false,
+                      "properties": {
+                        "runtime": {
+                          "additionalProperties": false,
+                          "properties": {
+                            "commit": {
+                              "description": "The OpenClaw source commit the schema and hints describe.",
+                              "minLength": 1,
+                              "type": "string"
+                            }
+                          },
+                          "required": ["commit"],
+                          "type": "object"
+                        },
+                        "schema": {
+                          "additionalProperties": {},
+                          "description": "The JSON Schema (draft-07) that `openclaw config schema` prints at that commit. It describes the native configuration document an Agent Configuration holds in `values`.",
+                          "type": "object"
+                        },
+                        "uiHints": {
+                          "additionalProperties": {
+                            "additionalProperties": true,
+                            "properties": {
+                              "advanced": { "type": "boolean" },
+                              "docsUrl": { "type": "string" },
+                              "group": { "type": "string" },
+                              "help": { "type": "string" },
+                              "inheritedDefault": { "type": "boolean" },
+                              "label": { "type": "string" },
+                              "order": { "type": "number" },
+                              "placeholder": { "type": "string" },
+                              "presentation": { "type": "string" },
+                              "sensitive": { "type": "boolean" },
+                              "tags": { "items": { "type": "string" }, "type": "array" }
+                            },
+                            "type": "object"
+                          },
+                          "description": "The display hints of the OpenClaw Control UI at that commit, keyed by dotted setting path. `*` stands for any map key and `[]` for any list entry, as in `agents.entries.*.model`.",
+                          "type": "object"
+                        }
+                      },
+                      "required": ["runtime", "schema", "uiHints"],
+                      "type": "object"
+                    },
+                    "meta": {
+                      "additionalProperties": false,
+                      "properties": {
+                        "requestId": {
+                          "pattern": "^req_[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$",
+                          "type": "string"
+                        }
+                      },
+                      "required": ["requestId"],
+                      "type": "object"
+                    }
+                  },
+                  "required": ["data", "meta"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "examples": { "example": { "$ref": "#/components/examples/INVALID_REQUEST" } },
+                "schema": { "$ref": "#/components/schemas/def-7" }
+              }
+            },
+            "description": "The request does not match the operation contract."
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "examples": { "example": { "$ref": "#/components/examples/UNAUTHENTICATED" } },
+                "schema": { "$ref": "#/components/schemas/def-7" }
+              }
+            },
+            "description": "The caller did not provide valid credentials."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "examples": { "example": { "$ref": "#/components/examples/FORBIDDEN" } },
+                "schema": { "$ref": "#/components/schemas/def-7" }
+              }
+            },
+            "description": "The caller is not allowed to perform this operation."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "examples": { "example": { "$ref": "#/components/examples/NOT_FOUND" } },
+                "schema": { "$ref": "#/components/schemas/def-7" }
+              }
+            },
+            "description": "The requested platform resource was not found."
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "examples": { "example": { "$ref": "#/components/examples/INTERNAL_ERROR" } },
+                "schema": { "$ref": "#/components/schemas/def-7" }
+              }
+            },
+            "description": "The platform request could not be completed."
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "examples": {
+                  "example": { "$ref": "#/components/examples/DEPENDENCY_UNAVAILABLE" }
+                },
+                "schema": { "$ref": "#/components/schemas/def-7" }
+              }
+            },
+            "description": "A required dependency is unavailable."
+          }
+        },
+        "summary": "Get the configuration JSON Schema and display hints of the pinned OpenClaw runtime, which describe Agent Configuration values",
+        "tags": ["Agents"],
+        "x-openclaw-permissions": [
+          { "action": "read", "resourceKind": "namespace", "scope": "requested" }
+        ]
+      }
+    },
     "/namespaces/{namespaceId}/agents/device-authorizations": {
       "post": {
         "description": "Requires create permission for Agent resources in the requested Namespace. Requires create permission for CredentialSource resources in the requested Namespace.",

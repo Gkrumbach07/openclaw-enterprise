@@ -46,6 +46,7 @@ COPY --from=console-build --chown=node:node /app/apps/controller/src/console/ind
 COPY --chown=node:node migrations migrations
 COPY --chown=node:node scripts scripts
 COPY --chown=node:node deploy/presets deploy/presets
+COPY --chown=node:node deploy/runtime/openclaw-config-schema.json deploy/runtime/openclaw-config-schema.json
 RUN mkdir -p /app/.development/configurations \
     && chown -R node:node /app/.development
 # The route validators and serializers, precompiled with this image's Node and dependencies
@@ -91,6 +92,7 @@ COPY --chown=node:node scripts/lib/bootstrap-credentials.ts scripts/lib/bootstra
 COPY --chown=node:node scripts/auth-maintain.ts scripts/auth-maintain.ts
 COPY --chown=node:node scripts/lib/auth-maintain-arguments.ts scripts/lib/auth-maintain-arguments.ts
 COPY --chown=node:node deploy/presets deploy/presets
+COPY --chown=node:node deploy/runtime/openclaw-config-schema.json deploy/runtime/openclaw-config-schema.json
 COPY --chown=node:node scripts/production-healthcheck.ts scripts/production-healthcheck.ts
 # As in the development stage: precompiled route validators and serializers for this image.
 RUN node apps/controller/src/precompile-route-schemas.ts

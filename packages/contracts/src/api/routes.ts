@@ -123,6 +123,7 @@ import {
   AgentCallerPermissionsResponse,
   AgentSecretPermissionsResponse,
   NamespaceAgentCapabilitiesResponse,
+  AgentConfigurationSchemaResponse,
   NamespaceCallerPermissionsResponse,
   NamespaceSecretPermissionsResponse,
   AgentResponse,
@@ -848,6 +849,23 @@ export const occApiRoutes = [
       querystring: EmptyQuery,
       params: NamespaceParams,
       response: { 200: NamespaceAgentCapabilitiesResponse, ...readErrors },
+    },
+  },
+  {
+    operationId: "getAgentConfigurationSchema",
+    method: "GET",
+    path: "/namespaces/:namespaceId/agents/configuration-schema",
+    action: "openclaw.agents.configuration_schema.read",
+    iamAction: "read",
+    resourceKind: "namespace",
+    authorizationTarget: "namespace",
+    summary:
+      "Get the configuration JSON Schema and display hints of the pinned OpenClaw runtime, which describe Agent Configuration values",
+    tags: ["Agents"],
+    schema: {
+      querystring: EmptyQuery,
+      params: NamespaceParams,
+      response: { 200: AgentConfigurationSchemaResponse, ...readErrors },
     },
   },
   {

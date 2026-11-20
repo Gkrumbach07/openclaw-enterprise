@@ -90,7 +90,7 @@ the paths.
 | [Connections](#connections) | 15 operations |
 | [Installation](#installation) | 10 operations |
 | [Namespaces](#namespaces) | 7 operations |
-| [Agents](#agents) | 54 operations |
+| [Agents](#agents) | 55 operations |
 | [Agent deployments](#agent-deployments) | 4 operations |
 | [Agent revisions](#agent-revisions) | 2 operations |
 | [Configurations](#configurations) | 4 operations |
@@ -4428,6 +4428,7 @@ Example response
 | [`POST /agents/{agentId}/chat`](#post-agentsagentidchat) | Submit an Agent turn and receive native JSON or SSE |
 | [`GET /namespaces/{namespaceId}/agents`](#get-namespacesnamespaceidagents) | List authorized Agents in one exact Namespace |
 | [`POST /namespaces/{namespaceId}/agents`](#post-namespacesnamespaceidagents) | Create a Namespace-owned Agent |
+| [`GET /namespaces/{namespaceId}/agents/configuration-schema`](#get-namespacesnamespaceidagentsconfigurationschema) | Get the configuration JSON Schema and display hints of the pinned OpenClaw runtime, which describe Agent Configuration values |
 | [`POST /namespaces/{namespaceId}/agents/device-authorizations`](#post-namespacesnamespaceidagentsdeviceauthorizations) | Experimental: Start a private device login for Agent configuration |
 | [`DELETE /namespaces/{namespaceId}/agents/device-authorizations/{sessionId}`](#delete-namespacesnamespaceidagentsdeviceauthorizationssessionid) | Experimental: Discard a local device login without upstream revocation |
 | [`POST /namespaces/{namespaceId}/agents/device-authorizations/{sessionId}/poll`](#post-namespacesnamespaceidagentsdeviceauthorizationssessionidpoll) | Experimental: Complete device login without returning credential material |
@@ -4814,6 +4815,95 @@ Example response
     "namespaceId": "ns_123e4567-e89b-42d3-a456-426614174000",
     "servicePrincipalId": "principal-research-agent",
     "status": "active"
+  },
+  "meta": {
+    "requestId": "req_123e4567-e89b-42d3-a456-426614174000"
+  }
+}
+```
+
+#### `GET /namespaces/{namespaceId}/agents/configuration-schema`
+
+<span id="get-namespacesnamespaceidagentsconfigurationschema"></span>
+
+Get the configuration JSON Schema and display hints of the pinned OpenClaw runtime, which describe Agent Configuration values
+
+**Operation ID:** `getAgentConfigurationSchema`
+
+**Permissions:** Requires read permission on the requested Namespace.
+
+| Action | Resource | Scope |
+| --- | --- | --- |
+| `read` | `namespace` | `requested` |
+
+##### Parameters
+
+| Name | In | Type | Required | Constraints | Example |
+| --- | --- | --- | --- | --- | --- |
+| `namespaceId` | path | `string` | Yes | pattern: `^ns_[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$` | "ns_123e4567-e89b-42d3-a456-426614174000" |
+
+##### Responses
+
+| Status | Meaning |
+| --- | --- |
+| `200` | OK |
+| `400` | The request does not match the operation contract. |
+| `401` | The caller did not provide valid credentials. |
+| `403` | The caller is not allowed to perform this operation. |
+| `404` | The requested platform resource was not found. |
+| `500` | The platform request could not be completed. |
+| `503` | A required dependency is unavailable. |
+
+**`200` response body:** `application/json`
+
+| Field | Type | Required | Constraints |
+| --- | --- | --- | --- |
+| `data` | `object` | Yes | — |
+| `data.runtime` | `object` | Yes | — |
+| `data.runtime.commit` | `string` | Yes | min length: 1; The OpenClaw source commit the schema and hints describe. |
+| `data.schema` | `object<string, any>` | Yes | The JSON Schema (draft-07) that `openclaw config schema` prints at that commit. It describes the native configuration document an Agent Configuration holds in `values`. |
+| `data.uiHints` | `object<string, object>` | Yes | The display hints of the OpenClaw Control UI at that commit, keyed by dotted setting path. `*` stands for any map key and `[]` for any list entry, as in `agents.entries.*.model`. |
+| `meta` | `object` | Yes | — |
+| `meta.requestId` | `string` | Yes | pattern: `^req_[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$` |
+
+Example response
+```json
+{
+  "data": {
+    "runtime": {
+      "commit": "82b682c627ba8bfc2c2bd51cf46ad8f51c583857"
+    },
+    "schema": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "additionalProperties": false,
+      "properties": {
+        "gateway": {
+          "additionalProperties": false,
+          "properties": {
+            "port": {
+              "exclusiveMinimum": 0,
+              "maximum": 65535,
+              "type": "integer"
+            }
+          },
+          "type": "object"
+        }
+      },
+      "type": "object"
+    },
+    "uiHints": {
+      "gateway": {
+        "advanced": true,
+        "docsUrl": "https://docs.openclaw.ai/gateway/configuration",
+        "label": "Gateway",
+        "order": 30
+      },
+      "gateway.port": {
+        "advanced": false,
+        "help": "TCP port used by the gateway listener for API, web app, and channel-facing ingress paths.",
+        "label": "Gateway Port"
+      }
+    }
   },
   "meta": {
     "requestId": "req_123e4567-e89b-42d3-a456-426614174000"

@@ -224,6 +224,10 @@ OpenAPI contract without controller dependencies, run:
 node scripts/generate-occ-api-reference.ts --check
 ```
 
+`pnpm config-schema:check` verifies that the committed
+[Agent configuration schema](../reference/configuration/runtime-schema.md#keep-the-schema-current)
+matches the pinned OpenClaw source.
+
 Run `pnpm hooks:install` to reinstall the managed pre-push hook. It refuses to
 replace an unmanaged hook and preserves `core.hooksPath`. The hook requires the
 Bun version in `.bun-version` and invokes that executable's formatter directly,

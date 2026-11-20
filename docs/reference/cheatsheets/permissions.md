@@ -104,6 +104,8 @@ operation was not authorized.`
   Namespace. The supplied API key or service account token is used transiently; no resource is created.
 - [Checking an Agent create](../api.md#post-namespacesnamespaceidagentsvalidate) before saving
   requires `agent:create` in the exact Namespace and creates nothing.
+- [Reading the Agent configuration schema](../api.md#get-namespacesnamespaceidagentsconfigurationschema)
+  requires `namespace:read` on the exact Namespace and no other permission.
 - [Create](../api.md#post-namespacesnamespaceidagents), [update](../api.md#patch-namespacesnamespaceidagentsagentid), and
   [deploy an Agent](../api.md#post-namespacesnamespaceidagentsagentiddeploy) also
   require `configuration:read`, `service_account:read` for current or new

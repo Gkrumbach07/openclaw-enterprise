@@ -43,6 +43,7 @@ import {
 import { OpenClawController, type PlatformStateStore } from "../../packages/occ/src/index.ts";
 import {
   AgentCallerPermissionsResponse,
+  AgentConfigurationSchemaResponse,
   AgentSecretPermissionsResponse,
   NamespaceAgentCapabilitiesResponse,
   NamespaceCallerPermissionsResponse,
@@ -313,6 +314,71 @@ test("the Namespace Agent capabilities authorize before resolving the exact Name
     action: "create",
     resource: { kind: "agent", id: ready.id, namespaceId: ready.id },
   });
+});
+
+test("the Agent configuration schema describes the pinned OpenClaw runtime and needs Namespace read", async (t) => {
+  const fixture = await createConsoleAppFixture(t);
+  await fixture.bootstrap();
+  const alpha = await fixture.createNamespace("Schema alpha");
+  const beta = await fixture.createNamespace("Schema beta");
+  const schemaPath = (namespaceId: string) =>
+    `/namespaces/${namespaceId}/agents/configuration-schema`;
+  const reader = await fixture.createNamespaceMember("schema-reader", alpha.id, [
+    ["read", "namespace"],
+  ]);
+  const readerSession = await fixture.signIn(reader.credentials);
+
+  const { response, text: body } = await fixture.rawRequest("GET", schemaPath(alpha.id), {
+    headers: authenticatedHeaders(readerSession),
+  });
+  assert.equal(response.headers.get("cache-control"), "no-store");
+  const served = checkedResponse(
+    fixture,
+    { status: response.status, body: JSON.parse(body) },
+    AgentConfigurationSchemaResponse,
+  ).data;
+  // The route serves the committed deploy/runtime/openclaw-config-schema.json. A changed pin
+  // without a regenerated file would describe another runtime, so it fails here.
+  const pinned: unknown = JSON.parse(
+    await readFile(new URL("../../deploy/runtime/openclaw-source.json", import.meta.url), "utf8"),
+  );
+  assert.ok(typeof pinned === "object" && pinned !== null && "commit" in pinned);
+  assert.equal(served.runtime.commit, pinned.commit);
+  // The whole native document: a closed root object whose settings include the ones OCC reads.
+  assert.equal(served.schema.type, "object");
+  assert.equal(served.schema.additionalProperties, false);
+  const settings = served.schema.properties;
+  assert.ok(typeof settings === "object" && settings !== null);
+  for (const setting of ["agents", "gateway", "models", "plugins"]) {
+    assert.ok(setting in settings, setting);
+  }
+  // Hints name settings by dotted path, with `*` for map keys.
+  assert.equal(typeof served.uiHints.gateway?.label, "string");
+  assert.ok(Object.keys(served.uiHints).some((path) => path.includes(".*.")));
+
+  // Namespace read on the exact Namespace is the whole requirement: another Namespace, Agent
+  // create without Namespace read, and no session are refused as the Namespace read is.
+  assertApiError(
+    await fixture.request("GET", schemaPath(beta.id), { session: readerSession }),
+    403,
+    "FORBIDDEN",
+  );
+  const creator = await fixture.createAccountWithPolicy("schema-creator", (principal) => {
+    grantRole(fixture.policy, principal.id, {
+      id: "schema-create-only",
+      namespaceId: alpha.id,
+      permissions: { agent: ["create"] },
+    });
+  });
+  const creatorSession = await fixture.signIn(creator.credentials);
+  for (const path of [schemaPath(alpha.id), `/namespaces/${alpha.id}`]) {
+    assertApiError(
+      await fixture.request("GET", path, { session: creatorSession }),
+      403,
+      "FORBIDDEN",
+    );
+  }
+  assert.equal((await fixture.request("GET", schemaPath(alpha.id), { session: null })).status, 401);
 });
 
 // The Secrets page disables Create Secret on a false answer (finding 2365), so the answer must be

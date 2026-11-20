@@ -697,6 +697,34 @@ export const responseExamples = {
       openclaw: { executionModes: ["dedicated"] },
     },
   },
+  getAgentConfigurationSchema: {
+    runtime: { commit: "82b682c627ba8bfc2c2bd51cf46ad8f51c583857" },
+    schema: {
+      $schema: "http://json-schema.org/draft-07/schema#",
+      type: "object",
+      properties: {
+        gateway: {
+          type: "object",
+          properties: { port: { type: "integer", exclusiveMinimum: 0, maximum: 65535 } },
+          additionalProperties: false,
+        },
+      },
+      additionalProperties: false,
+    },
+    uiHints: {
+      gateway: {
+        advanced: true,
+        label: "Gateway",
+        order: 30,
+        docsUrl: "https://docs.openclaw.ai/gateway/configuration",
+      },
+      "gateway.port": {
+        advanced: false,
+        label: "Gateway Port",
+        help: "TCP port used by the gateway listener for API, web app, and channel-facing ingress paths.",
+      },
+    },
+  },
   getNamespaceCallerPermissions: {
     delete: true,
     agents: { create: true },

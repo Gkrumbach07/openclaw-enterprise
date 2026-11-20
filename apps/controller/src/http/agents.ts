@@ -25,6 +25,7 @@ import {
   type ValidateAgentCreateInput,
 } from "@openclaw-enterprise/occ";
 import type { FastifyRequest } from "fastify";
+import { loadRuntimeConfigurationSchema } from "../admission/runtime-configuration-schema.ts";
 import {
   normalizeNativeAdminDomain,
   prepareNativeAdminConfiguration,
@@ -358,6 +359,24 @@ export function createAgentHandlers(options: AgentHandlerOptions) {
       );
       reply.header("cache-control", "no-store");
       reply.status(204).send();
+    },
+    // The schema is the same in every Namespace. Namespace read admits it, as it admits the
+    // Namespace's permission answers the console reads beside it.
+    async getAgentConfigurationSchema({
+      controller,
+      context,
+      request,
+      reply,
+      namespaceId,
+      setAuditReadTarget,
+    }) {
+      const namespace = await controller.getNamespace(context.actorId, namespaceId);
+      setAuditReadTarget({ kind: "namespace", id: namespace.id, namespaceId: namespace.id });
+      const { commit, schema, uiHints } = loadRuntimeConfigurationSchema();
+      reply.send({
+        data: { runtime: { commit }, schema, uiHints },
+        meta: { requestId: request.id },
+      });
     },
     async listAgents({ controller, context, request, reply, namespaceId }) {
       const agents = await controller.listAgents(context.actorId, namespaceId);

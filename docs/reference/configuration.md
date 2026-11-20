@@ -343,6 +343,7 @@ details compatibility checks.
 - [Controller worker lifecycle](controller.md)
 - [Update and deploy Agent revisions](../guides/topics/agent-revisions.md)
 - [Agent Configuration, versions, and deployment](agents.md)
+- [Agent configuration schema](configuration/runtime-schema.md)
 - [Kubernetes Compute Driver](drivers/kubernetes-compute.md)
 - [Identity and access management](authorization.md)
 - [Configuration lifecycle implementation](../../packages/occ/src/index.ts)

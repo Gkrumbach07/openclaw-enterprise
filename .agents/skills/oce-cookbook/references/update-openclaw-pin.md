@@ -117,6 +117,19 @@ CI and development launchers resolve the manifest automatically. A direct Docker
 build needs the explicit arguments. Conflicting build arguments fail before the
 archive download.
 
+Regenerate the [Agent configuration schema](../../../../docs/reference/configuration/runtime-schema.md)
+from the candidate image and commit it with the pin. Replace the image reference
+with the tag you built:
+
+```sh
+pnpm config-schema:generate --image openclaw-enterprise-runtime:quickstart
+pnpm config-schema:check
+```
+
+The generator stops when the image's recorded commit or patches differ from the
+checkout. The diff has one line for each top-level setting and hint path that
+changed. A patch-only change needs the same regeneration.
+
 Use [local checks](../../../../docs/testing/local.md) for changed code and documentation, then
 exercise the affected behavior with the [integration guides](../../../../docs/testing/README.md).
 Workspace changes need the existing template-parity coverage against the built

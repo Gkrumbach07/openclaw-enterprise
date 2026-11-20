@@ -899,6 +899,56 @@ export const NamespaceAgentCapabilitiesResponse = Type.Object(
   { additionalProperties: false },
 );
 
+// One setting's display hint, as the OpenClaw runtime reports it. OCC passes hints through; a
+// later runtime can add fields.
+const AgentConfigurationUiHint = Type.Object(
+  {
+    advanced: Type.Optional(Type.Boolean()),
+    label: Type.Optional(Type.String()),
+    help: Type.Optional(Type.String()),
+    group: Type.Optional(Type.String()),
+    order: Type.Optional(Type.Number()),
+    sensitive: Type.Optional(Type.Boolean()),
+    placeholder: Type.Optional(Type.String()),
+    docsUrl: Type.Optional(Type.String()),
+    presentation: Type.Optional(Type.String()),
+    inheritedDefault: Type.Optional(Type.Boolean()),
+    tags: Type.Optional(Type.Array(Type.String())),
+  },
+  { additionalProperties: true },
+);
+
+// The configuration JSON Schema of the OpenClaw runtime that this controller's source pins, with
+// the display hints of that runtime's Control UI.
+export const AgentConfigurationSchemaResponse = Type.Object(
+  {
+    data: Type.Object(
+      {
+        runtime: Type.Object(
+          {
+            commit: Type.String({
+              minLength: 1,
+              description: "The OpenClaw source commit the schema and hints describe.",
+            }),
+          },
+          { additionalProperties: false },
+        ),
+        schema: Type.Record(Type.String(), Type.Unknown(), {
+          description:
+            "The JSON Schema (draft-07) that `openclaw config schema` prints at that commit. It describes the native configuration document an Agent Configuration holds in `values`.",
+        }),
+        uiHints: Type.Record(Type.String(), AgentConfigurationUiHint, {
+          description:
+            "The display hints of the OpenClaw Control UI at that commit, keyed by dotted setting path. `*` stands for any map key and `[]` for any list entry, as in `agents.entries.*.model`.",
+        }),
+      },
+      { additionalProperties: false },
+    ),
+    meta: Meta,
+  },
+  { additionalProperties: false },
+);
+
 export const NamespaceCallerPermissionsResponse = Type.Object(
   {
     data: Type.Object(
@@ -2097,6 +2147,7 @@ export type AgentRevisionWire = Type.Static<typeof AgentRevisionSchema>;
 export type AgentDeploymentStatusWire = Type.Static<typeof AgentDeploymentStatusSchema>;
 export type AgentDeploymentDiagnosticsWire = Type.Static<typeof AgentDeploymentDiagnosticsSchema>;
 export type InstallationResponse = Type.Static<typeof InstallationResponse>;
+export type AgentConfigurationSchemaResponse = Type.Static<typeof AgentConfigurationSchemaResponse>;
 export type NamespaceAgentCapabilitiesResponse = Type.Static<
   typeof NamespaceAgentCapabilitiesResponse
 >;
